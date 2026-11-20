@@ -1,6 +1,11 @@
 <header class="top">
   <span class="brand">HomeLift</span>
-  <span class="sub">{{ today }}</span>
+  <div class="top-right">
+    <span class="sub">{{ today }}</span>
+    <a routerLink="/data" class="gear" aria-label="Backup and export">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+    </a>
+  </div>
 </header>
 
 @if (data(); as d) {

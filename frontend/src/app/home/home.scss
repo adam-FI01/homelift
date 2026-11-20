@@ -15,6 +15,8 @@
   justify-content: space-between;
   height: 44px;
 }
+.top-right { display: flex; align-items: center; gap: 4px; margin-right: -12px; }
+.gear { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--sub); }
 .brand {
   font-size: 17px;
   font-weight: 600;
