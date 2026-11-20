@@ -73,9 +73,32 @@ compose.yaml
 
 You need JDK 25 and Node 24 or newer.
 
+Run the API and the UI together with one command, then open `http://localhost:4200`:
+
 ```bash
-# API on :8080 (uses ./data/homelift.db)
-cd backend && ./mvnw spring-boot:run -Dskip.frontend=true
+./scripts/dev.sh
+```
+
+This starts Spring Boot with the `dev` profile on `:8080` and the Angular dev server on `:4200`, which proxies `/api` and `/actuator` to the backend. Ctrl-C stops both.
+
+The `dev` profile keeps its database at `~/.homelift/dev/homelift.db`, outside the repo, so local testing never touches real data. Set `HOMELIFT_DATA_DIR` to use another folder. The profile also logs SQL and exposes extra actuator endpoints (`/actuator/flyway`, `/actuator/mappings`, and others).
+
+### IntelliJ IDEA
+
+Shared run configurations live in [`.run/`](.run). Open the repo root, load `backend/pom.xml` as a Maven project when IntelliJ offers it, and these appear in the run menu:
+
+| Configuration           | What it does |
+| ----------------------- | ------------ |
+| `HomeLift (full stack)` | Starts the two below together |
+| `HomeLift API (dev)`    | Runs `HomeLiftApplication` with the `dev` profile, debuggable |
+| `HomeLift UI`           | `npm start` in `frontend/` |
+| `Backend tests`         | `mvn verify`, skipping the UI build |
+
+### Running pieces by hand
+
+```bash
+# API on :8080 with the dev profile
+cd backend && ./mvnw spring-boot:run -Dskip.frontend=true -Dspring-boot.run.profiles=dev
 
 # UI on :4200, proxying /api to :8080
 cd frontend && npm ci && npm start
