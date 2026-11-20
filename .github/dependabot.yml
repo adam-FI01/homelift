@@ -1,10 +1,13 @@
 version: 2
+# Updates land in qa first, then reach main with the next qa → main promotion.
 updates:
   - package-ecosystem: maven
     directory: /backend
+    target-branch: qa
     schedule: { interval: weekly }
   - package-ecosystem: npm
     directory: /frontend
+    target-branch: qa
     schedule: { interval: weekly }
     groups:
       angular:
@@ -15,7 +18,9 @@ updates:
         update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
+    target-branch: qa
     schedule: { interval: weekly }
   - package-ecosystem: docker
     directory: /
+    target-branch: qa
     schedule: { interval: weekly }

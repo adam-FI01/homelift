@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="HomeLift (full stack)" type="CompoundRunConfigurationType">
+    <toRun name="HomeLift API (dev)" type="Application" />
+    <toRun name="HomeLift UI" type="js.build_tools.npm" />
+    <method v="2" />
+  </configuration>
+</component>

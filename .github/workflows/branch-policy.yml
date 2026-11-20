@@ -1,0 +1,26 @@
+name: Branch policy
+
+# main only accepts pull requests from qa. This check is required on main,
+# so a PR from any other branch cannot be merged there.
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  source-is-qa:
+    name: Source branch is qa
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the PR's source branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REF" = "qa" ] && [ "$HEAD_REPO" = "${{ github.repository }}" ]; then
+            echo "OK: promoting qa to main."
+          else
+            echo "::error::Pull requests into main must come from the qa branch (got '$HEAD_REPO:$HEAD_REF'). Open this PR against qa instead."
+            exit 1
+          fi
