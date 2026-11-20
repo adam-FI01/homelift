@@ -85,7 +85,7 @@ The `dev` profile keeps its database at `~/.homelift/dev/homelift.db`, outside t
 
 ### IntelliJ IDEA
 
-Shared run configurations live in [`.run/`](.run). Open the repo root, load `backend/pom.xml` as a Maven project when IntelliJ offers it, and these appear in the run menu:
+Shared run configurations live in [`.run/`](.run). Open the **repo root** (not `backend/`), load `backend/pom.xml` as a Maven project when IntelliJ offers it, and these appear in the run menu:
 
 | Configuration           | What it does |
 | ----------------------- | ------------ |
