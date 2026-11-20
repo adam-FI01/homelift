@@ -5,6 +5,9 @@ Thumbs.db
 *.iml
 .vscode/*
 !.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
 
 # Local tool settings
 .claude/
