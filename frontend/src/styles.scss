@@ -1,21 +1,37 @@
+// Inter is bundled with the app (no Google Fonts call), so the UI works on an offline home network.
+@use '@fontsource-variable/inter';
+
+// Design tokens from the approved HomeLift mockups.
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #f6f6f4;
   --surface: #ffffff;
-  --text: #17181a;
-  --muted: #62656b;
-  --line: #e2e2de;
-  --ok: #1f9d55;
-  --bad: #d64545;
+  --ink: #111111;
+  --sub: #6b6b6b;
+  --line: #e8e8e5;
+  --soft: #eeeeeb;
+  --btn: #111111;
+  --on-btn: #ffffff;
+  --pos: #0e7a4f;
+  --neg: #c2413a;
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --tap: 44px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111213;
-    --surface: #1a1b1d;
-    --text: #ececea;
-    --muted: #9a9ca1;
-    --line: #2b2d30;
+    color-scheme: dark;
+    --bg: #0b0b0c;
+    --surface: #161618;
+    --ink: #f2f2f2;
+    --sub: #9a9a9e;
+    --line: #26262a;
+    --soft: #232326;
+    --btn: #f2f2f2;
+    --on-btn: #111111;
+    --pos: #3dd68c;
+    --neg: #ff7a70;
   }
 }
 
@@ -26,7 +42,25 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--text);
-  font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  font: 16px/1.5 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; cursor: pointer; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 18px;
+}
+
+.btn-primary {
+  display: flex; align-items: center; justify-content: center;
+  height: 52px; width: 100%;
+  border: 0; border-radius: var(--radius-control);
+  background: var(--btn); color: var(--on-btn);
+  font-size: 16px; font-weight: 600; text-decoration: none;
 }

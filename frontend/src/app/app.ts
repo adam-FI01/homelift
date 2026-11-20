@@ -15,12 +15,17 @@ import { RouterOutlet } from '@angular/router';
   styles: `
     :host { display: flex; flex-direction: column; min-height: 100dvh; }
     .bar {
-      position: sticky; top: 0;
-      padding: calc(env(safe-area-inset-top) + 0.875rem) 1rem 0.875rem;
-      background: var(--surface); border-bottom: 1px solid var(--line);
+      display: flex; align-items: center;
+      height: calc(env(safe-area-inset-top) + 64px);
+      padding: env(safe-area-inset-top) 20px 0;
+      max-width: 40rem; width: 100%; margin: 0 auto;
     }
-    .brand { font-weight: 700; letter-spacing: -0.01em; font-size: 1.125rem; }
-    .content { flex: 1; width: 100%; max-width: 40rem; margin: 0 auto; padding: 1.25rem 1rem; }
+    .brand { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+    .content {
+      flex: 1; width: 100%; max-width: 40rem; margin: 0 auto;
+      padding: 4px 20px calc(env(safe-area-inset-bottom) + 24px);
+      display: flex; flex-direction: column; gap: 16px;
+    }
   `,
 })
 export class App {}
