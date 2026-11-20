@@ -26,7 +26,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<sqlite-jdbc.version>3.54.1.0</sqlite-jdbc.version>
-		<frontend-maven-plugin.version>1.15.4</frontend-maven-plugin.version>
+		<frontend-maven-plugin.version>2.0.2</frontend-maven-plugin.version>
 		<node.version>v24.15.0</node.version>
 		<frontend.dir>${project.basedir}/../frontend</frontend.dir>
 		<!-- Set -Dskip.frontend=true when the SPA is built separately (e.g. in Docker). -->
