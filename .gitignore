@@ -11,3 +11,6 @@ backend/data/
 *.db
 *.db-wal
 *.db-shm
+
+# Private local notes (runbook etc.)
+*.local.md
