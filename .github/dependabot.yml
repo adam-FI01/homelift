@@ -9,6 +9,10 @@ updates:
     groups:
       angular:
         patterns: ['@angular/*', '@angular-devkit/*']
+    ignore:
+      # Angular pins a TypeScript range; take TypeScript majors together with an Angular major.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
