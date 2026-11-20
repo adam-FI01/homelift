@@ -94,6 +94,14 @@ Shared run configurations live in [`.run/`](.run). Open the **repo root** (not `
 | `HomeLift UI`           | `npm start` in `frontend/` |
 | `Backend tests`         | `mvn verify`, skipping the UI build |
 
+### VS Code
+
+Open the repo root. Shared configs live in [`.vscode/`](.vscode), and VS Code offers to install the recommended extensions (Java, Spring Boot, Angular).
+
+- **Run and Debug** › `HomeLift (full stack)` starts the API with the `dev` profile and the Angular dev server, then opens Chrome with breakpoints working in both.
+- `HomeLift API (dev)` and `HomeLift UI (Chrome)` start each side on its own.
+- **Terminal** › **Run Task** has `backend tests`, `frontend tests`, and `full stack (terminal)` (the same as `scripts/dev.sh`).
+
 ### Running pieces by hand
 
 ```bash
