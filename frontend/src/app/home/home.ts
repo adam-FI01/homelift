@@ -1,16 +1,23 @@
 import { Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { StatusService } from '../core/status.service';
 
 @Component({
   selector: 'app-home',
+  imports: [RouterLink],
   template: `
     <section class="hero">
       <span class="sub">Welcome</span>
       <h1>Ready to train</h1>
       <span class="sub">Workout logging is coming next.</span>
     </section>
+
+    <a class="card nav" routerLink="/exercises">
+      <span class="title">Exercise library</span>
+      <span class="sub">Browse, add and edit exercises ›</span>
+    </a>
 
     <section class="card" aria-label="Server" aria-live="polite">
       @if (status(); as s) {
@@ -33,6 +40,8 @@ import { StatusService } from '../core/status.service';
     .hero { display: flex; flex-direction: column; gap: 4px; padding: 4px 0 8px; }
     h1 { margin: 0; font-size: 34px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.15; }
     .sub { font-size: 14px; color: var(--sub); }
+    .nav { display: flex; flex-direction: column; gap: 2px; color: var(--ink); text-decoration: none; }
+    .title { font-weight: 600; }
     .row { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 500; }
     .dot { width: 8px; height: 8px; border-radius: 50%; }
     .on { background: var(--pos); } .off { background: var(--neg); }
