@@ -144,24 +144,26 @@
     </section>
   }
 
-  @if (picking()) {
-    <app-exercise-picker (picked)="add($event)" (closed)="picking.set(false)" />
-  } @else {
-    <button type="button" class="add" (click)="picking.set(true)">
-      <svg
-        aria-hidden="true"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-      Add exercise
-    </button>
-  }
+  <button type="button" class="add" (click)="picking.set(true)">
+    <svg
+      aria-hidden="true"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+    Add exercise
+  </button>
+
+  <app-sheet title="Add exercise" [open]="picking()" (closed)="picking.set(false)">
+    @if (picking()) {
+      <app-exercise-picker (picked)="add($event)" />
+    }
+  </app-sheet>
 
   @if (id()) {
     <button type="button" class="link" (click)="delete()">Delete routine</button>

@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { ConfirmService } from '../shared/confirm.service';
 import { RestTimer } from './rest-timer.service';
 import { Workout } from './workout';
 import { WorkoutPage } from './workout-page';
@@ -80,7 +81,7 @@ describe('WorkoutPage', () => {
   it('prefills the next set and shows last time', async () => {
     const { el } = await setup(WORKOUT);
     expect(el.querySelector('h1')?.textContent).toBe('Bench Press');
-    expect(el.textContent).toContain('Last time 80 × 5, 80 × 4');
+    expect(el.textContent).toContain('Last time 80 kg · 5, 4');
     expect(el.textContent).toContain('Log set 2 · 82.5 kg × 5');
   });
 
@@ -109,5 +110,44 @@ describe('WorkoutPage', () => {
     expect(el.querySelector('h1')?.textContent).toBe('Overhead Press');
     expect(el.querySelector('[aria-label="Rest timer"]')).not.toBeNull();
     http.verify();
+  });
+
+  it('edits a logged set in a sheet', async () => {
+    const { fixture, el, http } = await setup(WORKOUT);
+    (el.querySelector('[aria-label="Set 1 logged. Edit"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    const sheet = [...el.querySelectorAll('app-sheet')].find((s) =>
+      s.textContent?.includes('Edit set 1'),
+    )!;
+    (sheet.querySelector('[aria-label="One fewer rep"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    [...sheet.querySelectorAll('button')].find((b) => b.textContent?.includes('Save'))!.click();
+
+    const req = http.expectOne({ method: 'PUT', url: '/api/workouts/7/exercises/11/sets/100' });
+    expect(req.request.body).toEqual({ weightKg: 82.5, reps: 4 });
+    req.flush({ id: 100, setNumber: 1, weightKg: 82.5, reps: 4 });
+    http.expectOne('/api/workouts/7').flush(WORKOUT);
+  });
+
+  it('shows a summary before finishing', async () => {
+    const { fixture, el, button, http } = await setup(WORKOUT);
+    button('Finish').click();
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Finish workout?');
+    expect(el.textContent).toContain('413 kg');
+
+    button('Finish workout').click();
+    http.expectOne({ method: 'POST', url: '/api/workouts/7/finish' }).flush(WORKOUT);
+  });
+
+  it('asks before discarding', async () => {
+    const { fixture, button, http } = await setup(WORKOUT);
+    const ask = vi.spyOn(TestBed.inject(ConfirmService), 'ask').mockResolvedValue(false);
+    button('Discard workout').click();
+    await fixture.whenStable();
+    expect(ask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Discard this workout?', danger: true }),
+    );
+    http.expectNone({ method: 'DELETE' });
   });
 });

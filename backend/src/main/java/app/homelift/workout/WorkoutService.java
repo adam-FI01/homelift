@@ -113,6 +113,15 @@ public class WorkoutService {
 		return set;
 	}
 
+	/** Fixes the weight or reps of a set already logged. */
+	@Transactional
+	WorkoutSet updateSet(long workoutId, long workoutExerciseId, long setId, double weightKg, int reps) {
+		WorkoutSet set = exerciseOf(editable(workoutId), workoutExerciseId).findSet(setId)
+			.orElseThrow(() -> new WorkoutNotFoundException("Set " + setId));
+		set.correct(weightKg, reps);
+		return set;
+	}
+
 	@Transactional
 	void removeSet(long workoutId, long workoutExerciseId, long setId) {
 		Workout workout = editable(workoutId);

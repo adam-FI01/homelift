@@ -92,8 +92,8 @@
               <button
                 type="button"
                 class="check"
-                [attr.aria-label]="'Logged. Remove set ' + row.number"
-                (click)="removeSet(s.id, row.number)"
+                [attr.aria-label]="'Set ' + row.number + ' logged. Edit'"
+                (click)="editSet(s)"
               >
                 <svg
                   aria-hidden="true"
@@ -142,15 +142,74 @@
       <button type="button" class="btn-primary log" [disabled]="busy()" (click)="logSet()">
         Log set {{ nextSetNumber() }} · {{ formatKg(weight()) }} kg × {{ reps() }}
       </button>
-    } @else if (!picking()) {
+    } @else {
       <p class="sub empty">Add your first exercise to start logging.</p>
     }
 
-    @if (picking()) {
-      <app-exercise-picker (picked)="add($event)" (closed)="picking.set(false)" />
-    } @else {
-      <button type="button" class="secondary" (click)="picking.set(true)">Add exercise</button>
-    }
+    <button type="button" class="secondary" (click)="picking.set(true)">Add exercise</button>
+
+    <app-sheet title="Add exercise" [open]="picking()" (closed)="picking.set(false)">
+      @if (picking()) {
+        <app-exercise-picker (picked)="add($event)" />
+      }
+    </app-sheet>
+
+    <app-sheet
+      [title]="'Edit set ' + (editing()?.set?.setNumber ?? '')"
+      [open]="!!editing()"
+      (closed)="editing.set(null)"
+    >
+      @if (editing()) {
+        <div class="steppers">
+          <app-stepper
+            id="edit-weight-label"
+            label="Weight (kg)"
+            [(value)]="editWeight"
+            [step]="weightStep"
+            decreaseLabel="Decrease weight by 2.5 kg"
+            increaseLabel="Increase weight by 2.5 kg"
+          />
+          <app-stepper
+            id="edit-reps-label"
+            label="Reps"
+            [(value)]="editReps"
+            decreaseLabel="One fewer rep"
+            increaseLabel="One more rep"
+          />
+        </div>
+        <button type="button" class="btn-primary" [disabled]="busy()" (click)="saveSet()">
+          Save · {{ formatKg(editWeight()) }} kg × {{ editReps() }}
+        </button>
+        <button type="button" class="link danger" [disabled]="busy()" (click)="deleteSet()">
+          Delete set
+        </button>
+      }
+    </app-sheet>
+
+    <app-sheet title="Finish workout?" [open]="finishing()" (closed)="finishing.set(false)">
+      <dl class="summary">
+        <div>
+          <dt>Time</dt>
+          <dd>{{ elapsed() }}</dd>
+        </div>
+        <div>
+          <dt>Exercises</dt>
+          <dd>{{ summary().exercises }}</dd>
+        </div>
+        <div>
+          <dt>Sets</dt>
+          <dd>{{ summary().sets }}</dd>
+        </div>
+        <div>
+          <dt>Volume</dt>
+          <dd>{{ summary().volume.toLocaleString() }} kg</dd>
+        </div>
+      </dl>
+      <button type="button" class="btn-primary" [disabled]="busy()" (click)="confirmFinish()">
+        Finish workout
+      </button>
+      <button type="button" class="secondary" (click)="finishing.set(false)">Keep going</button>
+    </app-sheet>
 
     <app-rest-timer />
 

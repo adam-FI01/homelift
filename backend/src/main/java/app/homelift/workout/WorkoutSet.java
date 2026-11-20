@@ -68,6 +68,11 @@ public class WorkoutSet {
 		return this.loggedAt;
 	}
 
+	void correct(double weightKg, int reps) {
+		this.weightKg = weightKg;
+		this.reps = reps;
+	}
+
 	void renumber(int setNumber) {
 		this.setNumber = setNumber;
 	}

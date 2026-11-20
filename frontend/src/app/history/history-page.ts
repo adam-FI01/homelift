@@ -88,7 +88,10 @@ import { HistoryService } from './history.service';
       font-weight: 600;
       letter-spacing: -0.02em;
     }
-    .pills { display: flex; gap: 8px; }
+    .pills {
+      display: flex;
+      gap: 8px;
+    }
     .pill {
       height: 36px;
       padding: 0 14px;

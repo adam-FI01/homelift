@@ -3,11 +3,15 @@ import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { Exercise } from '../exercises/exercise';
 import { problemMessage } from '../exercises/exercise.service';
+import { describeSets } from '../history/history';
+import { ConfirmService } from '../shared/confirm.service';
+import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from './exercise-picker';
 import { RestTimer } from './rest-timer.service';
 import { RestTimerCard } from './rest-timer';
 import { Stepper } from './stepper';
 import {
+  LoggedSet,
   WEIGHT_STEP_KG,
   Workout,
   earnedProgression,
@@ -20,7 +24,7 @@ import { WorkoutService } from './workout.service';
 /** The workout in progress: pick an exercise, log sets with one tap, rest between them. */
 @Component({
   selector: 'app-workout-page',
-  imports: [RouterLink, Stepper, RestTimerCard, ExercisePicker],
+  imports: [RouterLink, Stepper, RestTimerCard, ExercisePicker, Sheet],
   templateUrl: './workout-page.html',
   styleUrl: './workout-page.scss',
 })
@@ -28,6 +32,7 @@ export class WorkoutPage {
   private readonly api = inject(WorkoutService);
   private readonly router = inject(Router);
   private readonly rest = inject(RestTimer);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly formatKg = formatKg;
   protected readonly weightStep = WEIGHT_STEP_KG;
@@ -39,6 +44,11 @@ export class WorkoutPage {
       Math.min(prev?.value ?? 0, Math.max((w?.exercises.length ?? 1) - 1, 0)),
   });
   protected readonly picking = signal(false);
+  protected readonly finishing = signal(false);
+  /** The logged set being corrected in the edit sheet, with draft values. */
+  protected readonly editing = signal<{ set: LoggedSet } | null>(null);
+  protected readonly editWeight = signal(0);
+  protected readonly editReps = signal(0);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -74,6 +84,17 @@ export class WorkoutPage {
     const planned = exercises.reduce((n, e) => n + Math.max(e.targetSets, e.sets.length), 0);
     const done = exercises.reduce((n, e) => n + e.sets.length, 0);
     return planned ? Math.round((done / planned) * 100) : 0;
+  });
+
+  /** Totals for the finish sheet. */
+  protected readonly summary = computed(() => {
+    const exercises = this.workout()?.exercises ?? [];
+    const sets = exercises.flatMap((e) => e.sets);
+    return {
+      exercises: exercises.filter((e) => e.sets.length > 0).length,
+      sets: sets.length,
+      volume: Math.round(sets.reduce((kg, s) => kg + s.weightKg * s.reps, 0)),
+    };
   });
 
   private readonly now = signal(Date.now());
@@ -119,6 +140,7 @@ export class WorkoutPage {
     const ex = this.current();
     if (!w || !ex) return;
     const finishesExercise = ex.sets.length + 1 >= ex.targetSets;
+    this.rest.prime();
     this.run(this.api.logSet(w.id, ex.id, this.weight(), this.reps()), () => {
       this.rest.start(ex.restSeconds ?? undefined);
       this.reload(() => {
@@ -130,37 +152,81 @@ export class WorkoutPage {
     });
   }
 
-  protected removeSet(setId: number, setNumber: number): void {
-    const w = this.workout();
-    const ex = this.current();
-    if (!w || !ex || !confirm(`Remove set ${setNumber}?`)) return;
-    this.run(this.api.removeSet(w.id, ex.id, setId), () => this.reload());
+  protected editSet(set: LoggedSet): void {
+    this.editWeight.set(set.weightKg);
+    this.editReps.set(set.reps);
+    this.editing.set({ set });
   }
 
-  protected removeExercise(): void {
+  protected saveSet(): void {
     const w = this.workout();
     const ex = this.current();
-    if (!w || !ex || !confirm(`Remove ${ex.name} from this workout?`)) return;
-    this.run(this.api.removeExercise(w.id, ex.id), (updated) => this.workout.set(updated));
+    const e = this.editing();
+    if (!w || !ex || !e) return;
+    this.run(this.api.updateSet(w.id, ex.id, e.set.id, this.editWeight(), this.editReps()), () => {
+      this.editing.set(null);
+      this.reload();
+    });
   }
 
+  protected deleteSet(): void {
+    const w = this.workout();
+    const ex = this.current();
+    const e = this.editing();
+    if (!w || !ex || !e) return;
+    this.run(this.api.removeSet(w.id, ex.id, e.set.id), () => {
+      this.editing.set(null);
+      this.reload();
+    });
+  }
+
+  protected async removeExercise(): Promise<void> {
+    const w = this.workout();
+    const ex = this.current();
+    if (!w || !ex) return;
+    const ok = await this.confirm.ask({
+      title: `Remove ${ex.name}?`,
+      message: ex.sets.length
+        ? `Its ${ex.sets.length} logged ${ex.sets.length === 1 ? 'set goes' : 'sets go'} too.`
+        : undefined,
+      confirmLabel: 'Remove exercise',
+      danger: true,
+    });
+    if (ok) this.run(this.api.removeExercise(w.id, ex.id), (updated) => this.workout.set(updated));
+  }
+
+  /** Opens the finish sheet, or offers to discard when nothing was logged. */
   protected finish(): void {
-    const w = this.workout();
-    if (!w) return;
-    const logged = w.exercises.some((e) => e.sets.length > 0);
-    if (!logged) {
-      this.discard();
+    if (this.summary().sets === 0) {
+      void this.discard();
       return;
     }
+    this.finishing.set(true);
+  }
+
+  protected confirmFinish(): void {
+    const w = this.workout();
+    if (!w) return;
     this.run(this.api.finish(w.id), () => {
+      this.finishing.set(false);
       this.rest.skip();
       this.router.navigate(['/']);
     });
   }
 
-  protected discard(): void {
+  protected async discard(): Promise<void> {
     const w = this.workout();
-    if (!w || !confirm('Discard this workout? Its sets will be deleted.')) return;
+    if (!w) return;
+    const sets = this.summary().sets;
+    const ok = await this.confirm.ask({
+      title: 'Discard this workout?',
+      message: sets
+        ? `The ${sets} ${sets === 1 ? 'set' : 'sets'} you logged will be deleted.`
+        : 'Nothing was logged yet.',
+      confirmLabel: 'Discard workout',
+      danger: true,
+    });
+    if (!ok) return;
     this.run(this.api.discard(w.id), () => {
       this.rest.skip();
       this.router.navigate(['/']);
@@ -173,7 +239,7 @@ export class WorkoutPage {
     const plan = ex.targetReps ? `Target ${ex.targetSets} × ${ex.targetReps}` : null;
     if (ex.lastTime.length === 0) return plan ?? 'First time doing this one';
     const last =
-      'last time ' + ex.lastTime.map((s) => `${formatKg(s.weightKg)} × ${s.reps}`).join(', ');
+      'last time ' + describeSets(ex.lastTime.map((s, i) => ({ ...s, setNumber: i + 1 })));
     const bump = earnedProgression(ex) ? ` · +${formatKg(WEIGHT_STEP_KG)} kg today` : '';
     return plan ? `${plan} · ${last}${bump}` : last.charAt(0).toUpperCase() + last.slice(1);
   }

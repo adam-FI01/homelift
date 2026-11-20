@@ -59,15 +59,13 @@ describe('ExerciseProgress', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    http
-      .expectOne('/api/exercises/1')
-      .flush({
-        id: 1,
-        name: 'Bench Press',
-        muscleGroup: 'CHEST',
-        equipment: 'BARBELL',
-        archived: false,
-      });
+    http.expectOne('/api/exercises/1').flush({
+      id: 1,
+      name: 'Bench Press',
+      muscleGroup: 'CHEST',
+      equipment: 'BARBELL',
+      archived: false,
+    });
     http.expectOne('/api/exercises/1/history').flush(HISTORY);
     await fixture.whenStable();
 

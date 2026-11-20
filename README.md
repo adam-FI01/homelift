@@ -135,12 +135,12 @@ Everything the UI does goes through a JSON API under `/api`. Errors use RFC 9457
 | Area      | Endpoints |
 | --------- | --------- |
 | Exercises | `GET/POST /api/exercises`, `GET/PUT /api/exercises/{id}`, `POST …/{id}/archive`, `POST …/{id}/restore`, `GET …/{id}/history` |
-| Workouts  | `GET /api/workouts`, `GET /api/workouts/current`, `POST /api/workouts`, `GET/DELETE /api/workouts/{id}`, `POST …/{id}/exercises`, `DELETE …/{id}/exercises/{exerciseId}`, `POST/DELETE …/sets`, `POST …/{id}/finish` |
+| Workouts  | `GET /api/workouts`, `GET /api/workouts/current`, `POST /api/workouts`, `GET/DELETE /api/workouts/{id}`, `POST …/{id}/exercises`, `DELETE …/{id}/exercises/{exerciseId}`, `POST …/sets`, `PUT/DELETE …/sets/{setId}`, `POST …/{id}/finish` |
 | Routines  | `GET/POST /api/routines`, `GET/PUT/DELETE /api/routines/{id}`, `POST …/{id}/start` |
 | Stats     | `GET /api/stats?period=DAY\|WEEK\|MONTH\|QUARTER\|YEAR&date=&zone=` |
 | Export    | `GET /api/export/homelift.db`, `GET /api/export/sets.csv`, `GET /api/export/backup.json` |
 
-A [Postman](https://www.postman.com/) collection covering every endpoint lives in [`postman/`](postman). Import both files, pick the **HomeLift local** environment (`http://localhost:8080`), and run the folders top to bottom: requests that create things save their ids for the next ones. For your own server, duplicate the environment and change `baseUrl`.
+A [Postman](https://www.postman.com/) collection covering every endpoint (31 requests) lives in [`postman/`](postman). Import both files, pick the **HomeLift local** environment (`http://localhost:8080`), and run the folders top to bottom: requests that create things save their ids for the next ones. For your own server, duplicate the environment and change `baseUrl`.
 
 ## Branches and releases
 

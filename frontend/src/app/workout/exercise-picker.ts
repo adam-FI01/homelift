@@ -4,15 +4,11 @@ import { catchError, map, of } from 'rxjs';
 import { Exercise, label } from '../exercises/exercise';
 import { ExerciseService } from '../exercises/exercise.service';
 
-/** A searchable list of active exercises; emits the one picked. */
+/** A searchable list of active exercises; emits the one picked. Shown inside a sheet. */
 @Component({
   selector: 'app-exercise-picker',
   template: `
-    <section class="card" aria-label="Add an exercise">
-      <div class="head">
-        <h2>Add exercise</h2>
-        <button type="button" class="close" (click)="closed.emit()">Cancel</button>
-      </div>
+    <div class="picker">
       <input
         type="search"
         placeholder="Search exercises"
@@ -33,7 +29,7 @@ import { ExerciseService } from '../exercises/exercise.service';
           <li class="sub empty">{{ exercises() ? 'No exercises match.' : 'Loading…' }}</li>
         }
       </ul>
-    </section>
+    </div>
   `,
   styles: `
     .card {
@@ -102,7 +98,6 @@ import { ExerciseService } from '../exercises/exercise.service';
 })
 export class ExercisePicker {
   readonly picked = output<Exercise>();
-  readonly closed = output<void>();
 
   protected readonly label = label;
   protected readonly query = signal('');

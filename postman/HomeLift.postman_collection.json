@@ -539,6 +539,54 @@
           ]
         },
         {
+          "name": "Correct set",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workouts/{{workoutId}}/exercises/{{workoutExerciseId}}/sets/{{setId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workouts",
+                "{{workoutId}}",
+                "exercises",
+                "{{workoutExerciseId}}",
+                "sets",
+                "{{setId}}"
+              ]
+            },
+            "description": "Fixes the weight or reps of a logged set while the workout is in progress.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weightKg\": 85,\n  \"reps\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Remove set",
           "request": {
             "method": "DELETE",

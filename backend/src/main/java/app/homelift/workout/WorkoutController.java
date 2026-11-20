@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -77,6 +78,12 @@ class WorkoutController {
 			@Valid @RequestBody LogSet body) {
 		WorkoutSet set = this.service.logSet(id, workoutExerciseId, body.weightKg(), body.reps());
 		return ResponseEntity.status(201).body(SetView.of(set));
+	}
+
+	@PutMapping("/{id}/exercises/{workoutExerciseId}/sets/{setId}")
+	SetView updateSet(@PathVariable long id, @PathVariable long workoutExerciseId, @PathVariable long setId,
+			@Valid @RequestBody LogSet body) {
+		return SetView.of(this.service.updateSet(id, workoutExerciseId, setId, body.weightKg(), body.reps()));
 	}
 
 	@DeleteMapping("/{id}/exercises/{workoutExerciseId}/sets/{setId}")

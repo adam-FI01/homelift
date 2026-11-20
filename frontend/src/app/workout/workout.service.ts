@@ -39,6 +39,22 @@ export class WorkoutService {
     });
   }
 
+  updateSet(
+    workoutId: number,
+    workoutExerciseId: number,
+    setId: number,
+    weightKg: number,
+    reps: number,
+  ) {
+    return this.http.put<LoggedSet>(
+      `${BASE}/${workoutId}/exercises/${workoutExerciseId}/sets/${setId}`,
+      {
+        weightKg,
+        reps,
+      },
+    );
+  }
+
   removeSet(workoutId: number, workoutExerciseId: number, setId: number) {
     return this.http.delete<void>(
       `${BASE}/${workoutId}/exercises/${workoutExerciseId}/sets/${setId}`,

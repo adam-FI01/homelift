@@ -2,6 +2,8 @@ import { Component, OnInit, computed, inject, input, numberAttribute, signal } f
 import { Router, RouterLink } from '@angular/router';
 import { Exercise } from '../exercises/exercise';
 import { problemMessage } from '../exercises/exercise.service';
+import { ConfirmService } from '../shared/confirm.service';
+import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from '../workout/exercise-picker';
 import { formatDuration } from '../workout/workout';
 import { DEFAULT_PLAN, RoutineExercise } from './routine';
@@ -18,13 +20,14 @@ const LIMITS: Record<Field, { min: number; max: number; step: number }> = {
 /** Builds or edits a routine: name, exercises in order, and sets × reps · rest for each. */
 @Component({
   selector: 'app-routine-editor',
-  imports: [RouterLink, ExercisePicker],
+  imports: [RouterLink, ExercisePicker, Sheet],
   templateUrl: './routine-editor.html',
   styleUrl: './routine-editor.scss',
 })
 export class RoutineEditor implements OnInit {
   private readonly api = inject(RoutineService);
   private readonly router = inject(Router);
+  private readonly confirm = inject(ConfirmService);
 
   readonly id = input(undefined, {
     transform: (v: unknown) => (v == null ? undefined : numberAttribute(v)),
@@ -135,9 +138,16 @@ export class RoutineEditor implements OnInit {
     });
   }
 
-  protected delete(): void {
+  protected async delete(): Promise<void> {
     const id = this.id();
-    if (!id || !confirm(`Delete ${this.name()}? Past workouts are kept.`)) return;
+    if (!id) return;
+    const ok = await this.confirm.ask({
+      title: `Delete ${this.name()}?`,
+      message: 'Workouts you already did with it are kept.',
+      confirmLabel: 'Delete routine',
+      danger: true,
+    });
+    if (!ok) return;
     this.api.delete(id).subscribe({
       next: () => this.router.navigate(['/routines']),
       error: (err: unknown) => this.error.set(problemMessage(err)),

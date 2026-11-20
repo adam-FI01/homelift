@@ -1,14 +1,22 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
+import { ConfirmHost } from './shared/confirm-host';
+import { RestTimerMini } from './workout/rest-timer-mini';
 
 /** The app shell: the page on top and a tab bar at the bottom, as in the mockups. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RestTimerMini, ConfirmHost],
   template: `
     <main class="content">
       <router-outlet />
     </main>
+    @if (!onWorkout()) {
+      <app-rest-timer-mini class="mini" />
+    }
+    <app-confirm-host />
     <nav class="tabs" aria-label="Main">
       <a
         routerLink="/"
@@ -88,10 +96,19 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       width: 100%;
       max-width: 40rem;
       margin: 0 auto;
-      padding: calc(env(safe-area-inset-top) + 16px) 20px calc(env(safe-area-inset-bottom) + 100px);
+      padding: calc(env(safe-area-inset-top) + 16px) 20px calc(env(safe-area-inset-bottom) + 140px);
       display: flex;
       flex-direction: column;
       gap: 16px;
+    }
+    .mini {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      z-index: 11;
+      max-width: 38rem;
+      margin: 0 auto;
+      bottom: calc(env(safe-area-inset-bottom) + 72px);
     }
     .tabs {
       position: fixed;
@@ -123,4 +140,15 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
     }
   `,
 })
-export class App {}
+export class App {
+  private readonly router = inject(Router);
+
+  /** The workout page shows the full timer, so the mini one hides there. */
+  protected readonly onWorkout = toSignal(
+    this.router.events.pipe(
+      filter((e) => e instanceof NavigationEnd),
+      map((e) => (e as NavigationEnd).urlAfterRedirects.startsWith('/workout')),
+    ),
+    { initialValue: false },
+  );
+}

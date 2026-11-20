@@ -98,6 +98,22 @@ class WorkoutApiTests {
 	}
 
 	@Test
+	void correctsALoggedSet() {
+		long workout = start(null);
+		long press = addExercise(workout, "Overhead Press");
+		long set = setId(logSet(workout, press, 40, 8));
+
+		assertThat(this.mvc.put()
+			.uri("/api/workouts/{w}/exercises/{e}/sets/{s}", workout, press, set)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"weightKg\":42.5,\"reps\":6}")).hasStatusOk()
+			.bodyJson()
+			.hasPathSatisfying("$.weightKg", (v) -> assertThat(v).isEqualTo(42.5))
+			.hasPathSatisfying("$.setNumber", (v) -> assertThat(v).isEqualTo(1));
+		assertThat(JsonPath.<List<Integer>>read(view(workout), "$.exercises[0].sets[*].reps")).containsExactly(6);
+	}
+
+	@Test
 	void aFinishedWorkoutCannotChange() {
 		long workout = start(null);
 		long dip = addExercise(workout, "Dip");
