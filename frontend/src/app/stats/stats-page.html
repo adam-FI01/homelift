@@ -1,0 +1,230 @@
+<header class="head">
+  <a routerLink="/history" class="icon" aria-label="Back to history">
+    <svg
+      aria-hidden="true"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  </a>
+  <h1>Stats</h1>
+</header>
+
+<div class="periods" role="group" aria-label="Period">
+  @for (p of periods; track p) {
+    <button
+      type="button"
+      [class.on]="period() === p"
+      [attr.aria-pressed]="period() === p"
+      (click)="select(p)"
+    >
+      {{ periodLabel(p) }}
+    </button>
+  }
+</div>
+
+<nav class="stepper" aria-label="Choose {{ noun() }}">
+  <button type="button" class="icon" [attr.aria-label]="'Previous ' + noun()" (click)="step(-1)">
+    <svg
+      aria-hidden="true"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  </button>
+  <span class="period-title" aria-live="polite">{{ title() }}</span>
+  <button
+    type="button"
+    class="icon"
+    [attr.aria-label]="'Next ' + noun()"
+    [disabled]="isCurrent()"
+    (click)="step(1)"
+  >
+    <svg
+      aria-hidden="true"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+</nav>
+
+@switch (load().status) {
+  @case ('loading') {
+    <p class="sub">Loading…</p>
+  }
+  @case ('error') {
+    <p class="card sub">Couldn't load stats. Is the server running?</p>
+  }
+}
+
+@if (stats(); as s) {
+  @if (s.totals.workouts === 0) {
+    <section class="card empty">
+      <p class="kicker">Nothing logged this {{ noun() }}{{ isCurrent() ? ' yet' : '' }}.</p>
+      @if (s.previous.workouts > 0) {
+        <p class="sub">
+          Last {{ noun() }} you did {{ s.previous.workouts }}
+          {{ s.previous.workouts === 1 ? 'workout' : 'workouts' }} and moved
+          {{ s.previous.volumeKg | number: '1.0-0' }} kg.
+        </p>
+      }
+      @if (isCurrent()) {
+        <a class="btn-primary" routerLink="/workout">Start a workout</a>
+      }
+    </section>
+  } @else {
+    <section class="card hero" aria-label="Total volume">
+      <span class="kicker">This {{ noun() }} you lifted</span>
+      <span class="big"
+        >{{ s.totals.volumeKg | number: '1.0-0' }} <span class="unit">kg</span></span
+      >
+      @if (comparison(); as c) {
+        <span class="sub">That's {{ c }}.</span>
+      }
+      @if (volumeChange(); as pct) {
+        <span class="delta" [class.down]="pct < 0">{{ signed(pct) }}% vs last {{ noun() }}</span>
+      }
+    </section>
+
+    <section class="tiles" aria-label="Totals">
+      <div class="card tile">
+        <span class="sub">Workouts</span><span class="val">{{ s.totals.workouts }}</span>
+      </div>
+      <div class="card tile">
+        <span class="sub">Time trained</span
+        ><span class="val">{{ hoursAndMinutes(s.totals.minutes) }}</span>
+      </div>
+      <div class="card tile">
+        <span class="sub">Sets</span><span class="val">{{ s.totals.sets }}</span>
+      </div>
+      <div class="card tile">
+        <span class="sub">Reps</span><span class="val">{{ s.totals.reps | number }}</span>
+      </div>
+    </section>
+
+    @if (s.period !== 'DAY') {
+      <section class="card" aria-label="Volume over time">
+        <span class="kicker">Volume</span>
+        <app-bar-chart [bars]="bars()" [label]="chartLabel()" />
+      </section>
+    }
+
+    @if (s.topExercise; as top) {
+      <a class="card story" [routerLink]="['/exercises', top.exerciseId]">
+        <span class="kicker">Your most-trained lift</span>
+        <span class="headline">{{ top.name }}</span>
+        <span class="sub">{{ top.sets }} sets · {{ top.volumeKg | number: '1.0-0' }} kg moved</span>
+      </a>
+    }
+
+    @if (s.heaviestLift; as h) {
+      <a class="card story" [routerLink]="['/exercises', h.exerciseId]">
+        <span class="kicker">Heaviest lift</span>
+        <span class="headline"
+          >{{ h.weightKg | number: '1.0-1' }} kg <span class="unit">× {{ h.reps }}</span></span
+        >
+        <span class="sub">{{ h.name }} · {{ dayLabel(h.date) }}</span>
+      </a>
+    }
+
+    <section class="card" aria-label="New records">
+      <span class="kicker">New records</span>
+      @if (s.records.length === 0) {
+        <p class="sub none">No new estimated 1RM records this {{ noun() }}. Keep at it.</p>
+      } @else {
+        <span class="headline"
+          >{{ s.records.length }} {{ s.records.length === 1 ? 'record' : 'records' }} broken</span
+        >
+        <ul class="list">
+          @for (r of s.records; track r.exerciseId) {
+            <li>
+              <a [routerLink]="['/exercises', r.exerciseId]">
+                <span class="name">{{ r.name }}</span>
+                <span class="sub"
+                  >{{ r.weightKg | number: '1.0-1' }} kg × {{ r.reps }} · e1RM
+                  {{ r.estimatedOneRepMax | number: '1.0-1' }}</span
+                >
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (s.muscleGroups.length > 0) {
+      <section class="card" aria-label="Muscle focus">
+        <span class="kicker">Muscle focus</span>
+        <span class="headline"
+          >Mostly {{ titleCase(s.muscleGroups[0].muscleGroup).toLowerCase() }}</span
+        >
+        <ul class="shares">
+          @for (m of s.muscleGroups; track m.muscleGroup) {
+            <li>
+              <span class="share-label">{{ titleCase(m.muscleGroup) }}</span>
+              <span class="track"><span class="fill" [style.width.%]="m.share"></span></span>
+              <span class="sub pct">{{ m.share | number: '1.0-0' }}%</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (s.period !== 'DAY') {
+      <section class="card rhythm" aria-label="Your rhythm">
+        <span class="kicker">Your rhythm</span>
+        <dl>
+          <div>
+            <dt>Days trained</dt>
+            <dd>{{ s.activeDays }}</dd>
+          </div>
+          <div>
+            <dt>Longest streak</dt>
+            <dd>{{ s.longestStreakDays }} {{ s.longestStreakDays === 1 ? 'day' : 'days' }}</dd>
+          </div>
+          @if (s.favoriteWeekday; as f) {
+            <div>
+              <dt>Favourite day</dt>
+              <dd>{{ titleCase(f.day) }}</dd>
+            </div>
+          }
+          @if (s.favoriteTimeOfDay; as t) {
+            <div>
+              <dt>Usually trains</dt>
+              <dd>In the {{ titleCase(t).toLowerCase() }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Average session</dt>
+            <dd>{{ hoursAndMinutes(s.averageMinutes) }}</dd>
+          </div>
+        </dl>
+      </section>
+    }
+
+    @if (s.biggestSession; as b) {
+      @if (s.totals.workouts > 1) {
+        <section class="card story" aria-label="Biggest session">
+          <span class="kicker">Biggest session</span>
+          <span class="headline">{{ b.volumeKg | number: '1.0-0' }} kg</span>
+          <span class="sub">{{ dayLabel(b.date) }} · {{ b.sets }} sets</span>
+        </section>
+      }
+    }
+  }
+}

@@ -32,5 +32,10 @@ export const routes: Routes = [
     loadComponent: () => import('./workout/workout-page').then((m) => m.WorkoutPage),
     title: 'Workout · HomeLift',
   },
+  {
+    path: 'stats',
+    loadComponent: () => import('./stats/stats-page').then((m) => m.StatsPage),
+    title: 'Stats · HomeLift',
+  },
   { path: '**', redirectTo: '' },
 ];
