@@ -1,17 +1,26 @@
 version: 2
+# Updates land in qa first, then reach main with the next qa → main promotion.
 updates:
   - package-ecosystem: maven
     directory: /backend
+    target-branch: qa
     schedule: { interval: weekly }
   - package-ecosystem: npm
     directory: /frontend
+    target-branch: qa
     schedule: { interval: weekly }
     groups:
       angular:
         patterns: ['@angular/*', '@angular-devkit/*']
+    ignore:
+      # Angular pins a TypeScript range; take TypeScript majors together with an Angular major.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
+    target-branch: qa
     schedule: { interval: weekly }
   - package-ecosystem: docker
     directory: /
+    target-branch: qa
     schedule: { interval: weekly }

@@ -73,9 +73,40 @@ compose.yaml
 
 You need JDK 25 and Node 24 or newer.
 
+Run the API and the UI together with one command, then open `http://localhost:4200`:
+
 ```bash
-# API on :8080 (uses ./data/homelift.db)
-cd backend && ./mvnw spring-boot:run -Dskip.frontend=true
+./scripts/dev.sh
+```
+
+This starts Spring Boot with the `dev` profile on `:8080` and the Angular dev server on `:4200`, which proxies `/api` and `/actuator` to the backend. Ctrl-C stops both.
+
+The `dev` profile keeps its database at `~/.homelift/dev/homelift.db`, outside the repo, so local testing never touches real data. Set `HOMELIFT_DATA_DIR` to use another folder. The profile also logs SQL and exposes extra actuator endpoints (`/actuator/flyway`, `/actuator/mappings`, and others).
+
+### IntelliJ IDEA
+
+Shared run configurations live in [`.run/`](.run). Open the **repo root** (not `backend/`), load `backend/pom.xml` as a Maven project when IntelliJ offers it, and these appear in the run menu:
+
+| Configuration           | What it does |
+| ----------------------- | ------------ |
+| `HomeLift (full stack)` | Starts the two below together |
+| `HomeLift API (dev)`    | Runs `HomeLiftApplication` with the `dev` profile, debuggable |
+| `HomeLift UI`           | `npm start` in `frontend/` |
+| `Backend tests`         | `mvn verify`, skipping the UI build |
+
+### VS Code
+
+Open the repo root. Shared configs live in [`.vscode/`](.vscode), and VS Code offers to install the recommended extensions (Java, Spring Boot, Angular).
+
+- **Run and Debug** › `HomeLift (full stack)` starts the API with the `dev` profile and the Angular dev server, then opens Chrome with breakpoints working in both.
+- `HomeLift API (dev)` and `HomeLift UI (Chrome)` start each side on its own.
+- **Terminal** › **Run Task** has `backend tests`, `frontend tests`, and `full stack (terminal)` (the same as `scripts/dev.sh`).
+
+### Running pieces by hand
+
+```bash
+# API on :8080 with the dev profile
+cd backend && ./mvnw spring-boot:run -Dskip.frontend=true -Dspring-boot.run.profiles=dev
 
 # UI on :4200, proxying /api to :8080
 cd frontend && npm ci && npm start
@@ -88,6 +119,17 @@ cd frontend && npx ng test --watch=false
 cd backend && ./mvnw verify          # also builds the UI into the jar
 docker build -t homelift .
 ```
+
+## Branches and releases
+
+```
+feature/* ──PR──► qa ──PR──► main ──► ghcr.io/adam-fi01/homelift:latest
+```
+
+- **`qa`** is the integration branch. Feature, fix and Dependabot PRs target `qa` and are squash-merged once CI passes.
+- **`main`** is the release branch. It only accepts a pull request from `qa`, which is enforced by the required `Source branch is qa` check, and that PR is merged with a merge commit so the two branches stay in sync.
+- Both branches are protected. Changes need a pull request with passing checks, and force pushes and deletion are blocked.
+- Every pull request builds the multi-arch image as a check, but **only `main` publishes it** to GHCR.
 
 ## Roadmap
 

@@ -1,0 +1,11 @@
+{
+  // backend/pom.xml is the only Java project; skip scanning node_modules and build output.
+  "java.import.exclusions": ["**/node_modules/**", "**/target/**", "**/dist/**", "**/.angular/**"],
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "automatic",
+  // Use the Maven wrapper (pinned in backend/.mvn) for Maven commands.
+  "maven.executable.preferMavenWrapper": true,
+  "search.exclude": { "**/.angular": true, "**/dist": true, "**/target": true },
+  "[typescript][html][scss][json][jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "typescript.tsdk": "frontend/node_modules/typescript/lib"
+}

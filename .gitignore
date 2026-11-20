@@ -1,16 +1,40 @@
 # OS / editors
 .DS_Store
+Thumbs.db
+*.swp
+*~
 .idea/
 *.iml
 .vscode/*
 !.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
 
-# Local app data (SQLite)
-data/
-backend/data/
+# Local tool settings
+.claude/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Logs
+*.log
+logs/
+
+# Local app data (SQLite). Anchored so source folders named "data" are not ignored.
+/data/
+/backend/data/
 *.db
 *.db-wal
 *.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
 
 # Private local notes (runbook etc.)
 *.local.md
