@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/target
+**/.angular
+**/data
+.git
+.github
+*.md
+!frontend/**/*.md

@@ -1,0 +1,13 @@
+# OS / editors
+.DS_Store
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+
+# Local app data (SQLite)
+data/
+backend/data/
+*.db
+*.db-wal
+*.db-shm

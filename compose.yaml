@@ -1,0 +1,15 @@
+# Run HomeLift with:  docker compose up -d
+# Then open http://<your-host>:8080
+services:
+  homelift:
+    image: ghcr.io/adam-fi01/homelift:latest
+    container_name: homelift
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      TZ: Etc/UTC
+    # Plenty for a Raspberry Pi with 4 GB of RAM; the JVM sizes its heap from this.
+    mem_limit: 512m
