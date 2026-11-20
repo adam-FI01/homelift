@@ -1,5 +1,6 @@
 # OS / editors
 .DS_Store
+Thumbs.db
 .idea/
 *.iml
 .vscode/*
@@ -8,9 +9,20 @@
 !.vscode/tasks.json
 !.vscode/settings.json
 
-# Local app data (SQLite)
-data/
-backend/data/
+# Local tool settings
+.claude/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Local app data (SQLite). Anchored so source folders named "data" are not ignored.
+/data/
+/backend/data/
 *.db
 *.db-wal
 *.db-shm

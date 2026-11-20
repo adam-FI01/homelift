@@ -120,6 +120,17 @@ cd backend && ./mvnw verify          # also builds the UI into the jar
 docker build -t homelift .
 ```
 
+## Branches and releases
+
+```
+feature/* ──PR──► qa ──PR──► main ──► ghcr.io/adam-fi01/homelift:latest
+```
+
+- **`qa`** is the integration branch. Feature, fix and Dependabot PRs target `qa` and are squash-merged once CI passes.
+- **`main`** is the release branch. It only accepts a pull request from `qa`, which is enforced by the required `Source branch is qa` check, and that PR is merged with a merge commit so the two branches stay in sync.
+- Both branches are protected. Changes need a pull request with passing checks, and force pushes and deletion are blocked.
+- Every pull request builds the multi-arch image as a check, but **only `main` publishes it** to GHCR.
+
 ## Roadmap
 
 - [x] Project skeleton, CI, multi-arch image
