@@ -7,3 +7,9 @@
 .github
 *.md
 !frontend/**/*.md
+.env
+.env.*
+*.log
+.idea
+.vscode
+.run
