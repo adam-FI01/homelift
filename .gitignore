@@ -1,6 +1,9 @@
 # OS / editors
 .DS_Store
 Thumbs.db
+*.swp
+*~
+Thumbs.db
 .idea/
 *.iml
 .vscode/*
@@ -13,9 +16,13 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.p12
 
 # Logs
 *.log
+logs/
 
 # Local app data (SQLite). Anchored so source folders named "data" are not ignored.
 /data/
@@ -23,6 +30,9 @@ Thumbs.db
 *.db
 *.db-wal
 *.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
 
 # Private local notes (runbook etc.)
 *.local.md
