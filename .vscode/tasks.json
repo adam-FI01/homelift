@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ng serve",
+      "detail": "Angular dev server on :4200, proxying /api to :8080",
+      "type": "npm",
+      "script": "start",
+      "path": "frontend",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "typescript",
+        "pattern": "$tsc",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Changes detected|Building",
+          "endsPattern": "bundle generation (complete|failed)"
+        }
+      }
+    },
+    {
+      "label": "frontend tests",
+      "type": "shell",
+      "command": "npx ng test --watch=false",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "backend tests",
+      "type": "shell",
+      "command": "./mvnw verify -Dskip.frontend=true",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "full stack (terminal)",
+      "detail": "scripts/dev.sh: API and UI in one terminal, no debugger",
+      "type": "shell",
+      "command": "./scripts/dev.sh",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}
