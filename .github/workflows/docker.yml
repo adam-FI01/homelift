@@ -1,7 +1,8 @@
 name: Docker image
 
-# Every run builds the image for amd64 and arm64, but only commits on main are
-# pushed to GHCR. Pull requests and manual runs on other branches build only.
+# Pull requests: a quick amd64-only build to prove the Dockerfile works. Nothing is pushed.
+# Push to main: the full amd64 + arm64 build, published to GHCR.
+# The job is called "image" in both cases because it is a required check.
 on:
   push:
     branches: [main]
@@ -11,6 +12,11 @@ on:
 permissions:
   contents: read
   packages: write
+
+# Superseded PR builds are cancelled. A publish on main is never cancelled.
+concurrency:
+  group: docker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}
@@ -22,7 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # arm64 emulation is only needed for the multi-arch publish.
       - uses: docker/setup-qemu-action@v4
+        if: env.PUBLISH == 'true'
       - uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
@@ -46,7 +54,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ env.PUBLISH == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           push: ${{ env.PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

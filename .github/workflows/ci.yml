@@ -1,15 +1,18 @@
 name: CI
 
+# Runs on pull requests only. Every change reaches qa and main through a PR whose
+# branch must be up to date, so re-running the same tests after the merge would
+# only spend Actions minutes. Use "Run workflow" to run it by hand.
 on:
-  push:
-    branches: [main, qa]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# A new push to the same PR cancels the run it replaces.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
