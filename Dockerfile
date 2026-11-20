@@ -5,7 +5,7 @@
 # arm64 images build fast without emulating Maven or npm.
 
 # ---- 1. Angular -----------------------------------------------------------
-FROM --platform=$BUILDPLATFORM node:24-alpine AS web
+FROM --platform=$BUILDPLATFORM node:26-alpine AS web
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
