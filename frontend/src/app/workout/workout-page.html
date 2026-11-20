@@ -1,0 +1,161 @@
+@switch (workout()) {
+  @case (undefined) {
+    <p class="sub">Loading…</p>
+  }
+  @case (null) {
+    <section class="hero">
+      <h1>No workout in progress</h1>
+      <p class="sub">Start one and add exercises as you go. Each set fills in from last time.</p>
+    </section>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <button type="button" class="btn-primary" [disabled]="busy()" (click)="start()">
+      Start workout
+    </button>
+  }
+  @default {
+    <header class="top">
+      <a routerLink="/" class="icon" aria-label="Back to home">
+        <svg
+          aria-hidden="true"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+      </a>
+      <div class="title">
+        <span class="name">{{ workout()!.name ?? 'Workout' }}</span>
+        <span class="sub" aria-label="Elapsed time">{{ elapsed() }}</span>
+      </div>
+      <button type="button" class="finish" [disabled]="busy()" (click)="finish()">Finish</button>
+    </header>
+
+    <div
+      class="progress"
+      role="progressbar"
+      aria-label="Workout progress"
+      [attr.aria-valuenow]="progress()"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div [style.width.%]="progress()"></div>
+    </div>
+
+    @if (workout()!.exercises.length > 1) {
+      <nav class="chips" aria-label="Exercises in this workout">
+        @for (e of workout()!.exercises; track e.id; let i = $index) {
+          <button
+            type="button"
+            class="chip"
+            [class.on]="i === index()"
+            [class.done]="e.sets.length >= e.targetSets"
+            [attr.aria-current]="i === index() ? 'step' : null"
+            (click)="index.set(i)"
+          >
+            {{ e.name }}
+          </button>
+        }
+      </nav>
+    }
+
+    @if (current(); as ex) {
+      <section class="exercise">
+        <div class="heading">
+          <span class="sub">Exercise {{ index() + 1 }} of {{ workout()!.exercises.length }}</span>
+          <h1>{{ ex.name }}</h1>
+          <span class="sub">{{ lastTimeSummary() }}</span>
+        </div>
+        <button type="button" class="pill" (click)="removeExercise()">Remove</button>
+      </section>
+
+      <section class="card sets" aria-label="Sets">
+        <div class="grid head">
+          <span>Set</span><span>Last time</span><span class="num">kg</span
+          ><span class="num">Reps</span><span></span>
+        </div>
+        @for (row of rows(); track row.number) {
+          <div class="grid" [class.next]="row.next" [class.todo]="!row.logged && !row.next">
+            <span>{{ row.number }}</span>
+            <span class="last">{{
+              row.last ? formatKg(row.last.weightKg) + ' × ' + row.last.reps : '–'
+            }}</span>
+            @if (row.logged; as s) {
+              <span class="num">{{ formatKg(s.weightKg) }}</span><span class="num">{{
+                s.reps
+              }}</span>
+              <button
+                type="button"
+                class="check"
+                [attr.aria-label]="'Logged. Remove set ' + row.number"
+                (click)="removeSet(s.id, row.number)"
+              >
+                <svg
+                  aria-hidden="true"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                >
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              </button>
+            } @else if (row.next) {
+              <span class="num">{{ formatKg(weight()) }}</span><span class="num">{{ reps() }}</span
+              ><span class="ring" aria-hidden="true"></span>
+            } @else {
+              <span class="num"></span><span class="num"></span><span></span>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="steppers" [attr.aria-label]="'Set ' + nextSetNumber()">
+        <app-stepper
+          id="weight-label"
+          label="Weight (kg)"
+          [(value)]="weight"
+          [step]="weightStep"
+          decreaseLabel="Decrease weight by 2.5 kg"
+          increaseLabel="Increase weight by 2.5 kg"
+        />
+        <app-stepper
+          id="reps-label"
+          label="Reps"
+          [(value)]="reps"
+          decreaseLabel="One fewer rep"
+          increaseLabel="One more rep"
+        />
+      </section>
+
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+
+      <button type="button" class="btn-primary log" [disabled]="busy()" (click)="logSet()">
+        Log set {{ nextSetNumber() }} · {{ formatKg(weight()) }} kg × {{ reps() }}
+      </button>
+    } @else if (!picking()) {
+      <p class="sub empty">Add your first exercise to start logging.</p>
+    }
+
+    @if (picking()) {
+      <app-exercise-picker (picked)="add($event)" (closed)="picking.set(false)" />
+    } @else {
+      <button type="button" class="secondary" (click)="picking.set(true)">Add exercise</button>
+    }
+
+    <app-rest-timer />
+
+    <button type="button" class="link" [disabled]="busy()" (click)="discard()">
+      Discard workout
+    </button>
+  }
+}

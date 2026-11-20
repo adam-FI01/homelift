@@ -11,8 +11,10 @@ import { StatusService } from '../core/status.service';
     <section class="hero">
       <span class="sub">Welcome</span>
       <h1>Ready to train</h1>
-      <span class="sub">Workout logging is coming next.</span>
+      <span class="sub">Log sets with one tap, filled in from last time.</span>
     </section>
+
+    <a class="btn-primary" routerLink="/workout">Start or continue workout</a>
 
     <a class="card nav" routerLink="/exercises">
       <span class="title">Exercise library</span>
