@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import app.homelift.exercise.Exercise;
 import app.homelift.exercise.ExerciseService;
 import app.homelift.workout.WorkoutDtos.ExerciseView;
+import app.homelift.workout.WorkoutDtos.WorkoutSummary;
 import app.homelift.workout.WorkoutDtos.WorkoutView;
 
 /** Starts, records and finishes workouts. */
@@ -39,6 +40,14 @@ public class WorkoutService {
 
 	public Workout get(long id) {
 		return this.workouts.findById(id).orElseThrow(() -> new WorkoutNotFoundException("Workout " + id));
+	}
+
+	/** Finished workouts, newest first. */
+	public List<WorkoutSummary> recent(int limit) {
+		return this.workouts.findByFinishedAtIsNotNullOrderByStartedAtDescIdDesc(Limit.of(limit))
+			.stream()
+			.map(WorkoutSummary::of)
+			.toList();
 	}
 
 	/** The workout with each exercise's sets and what was lifted the last time. */

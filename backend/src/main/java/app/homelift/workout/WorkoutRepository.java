@@ -11,6 +11,8 @@ interface WorkoutRepository extends JpaRepository<Workout, Long> {
 
 	Optional<Workout> findFirstByFinishedAtIsNull();
 
+	List<Workout> findByFinishedAtIsNotNullOrderByStartedAtDescIdDesc(Limit limit);
+
 	/**
 	 * The most recent earlier time an exercise was done with at least one set logged, so a new
 	 * workout can be filled in from it.

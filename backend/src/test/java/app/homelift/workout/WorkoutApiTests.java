@@ -120,6 +120,22 @@ class WorkoutApiTests {
 	}
 
 	@Test
+	void listsFinishedWorkoutsNewestFirst() {
+		long first = start("Pull");
+		logSet(first, addExercise(first, "Pull-up"), 0, 10);
+		this.mvc.post().uri("/api/workouts/{id}/finish", first).exchange();
+		long second = start("Push");
+		logSet(second, addExercise(second, "Bench Press"), 60, 10);
+		this.mvc.post().uri("/api/workouts/{id}/finish", second).exchange();
+		start("In progress");
+
+		String body = body(this.mvc.get().uri("/api/workouts?limit=5").exchange());
+		assertThat(JsonPath.<List<String>>read(body, "$[*].name")).startsWith("Push", "Pull").doesNotContain("In progress");
+		assertThat(JsonPath.<Double>read(body, "$[0].volumeKg")).isEqualTo(600.0);
+		assertThat(JsonPath.<List<String>>read(body, "$[0].exercises")).containsExactly("Bench Press");
+	}
+
+	@Test
 	void discardsAWorkout() {
 		long workout = start(null);
 		addExercise(workout, "Deadlift");

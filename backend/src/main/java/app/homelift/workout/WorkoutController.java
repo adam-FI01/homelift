@@ -1,8 +1,11 @@
 package app.homelift.workout;
 
 import java.net.URI;
+import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,12 +14,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import app.homelift.workout.WorkoutDtos.AddExercise;
 import app.homelift.workout.WorkoutDtos.LogSet;
 import app.homelift.workout.WorkoutDtos.SetView;
 import app.homelift.workout.WorkoutDtos.StartWorkout;
+import app.homelift.workout.WorkoutDtos.WorkoutSummary;
 import app.homelift.workout.WorkoutDtos.WorkoutView;
 
 /** REST API for logging a workout. Every change returns the updated workout. */
@@ -28,6 +33,12 @@ class WorkoutController {
 
 	WorkoutController(WorkoutService service) {
 		this.service = service;
+	}
+
+	/** Finished workouts, newest first. */
+	@GetMapping
+	List<WorkoutSummary> recent(@RequestParam(defaultValue = "30") @Min(1) @Max(500) int limit) {
+		return this.service.recent(limit);
 	}
 
 	/** The workout in progress, or 204 when there is none. */

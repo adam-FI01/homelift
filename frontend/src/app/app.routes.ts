@@ -14,8 +14,18 @@ export const routes: Routes = [
   },
   {
     path: 'exercises/:id',
+    loadComponent: () => import('./history/exercise-progress').then((m) => m.ExerciseProgress),
+    title: 'Progress · HomeLift',
+  },
+  {
+    path: 'exercises/:id/edit',
     loadComponent: () => import('./exercises/exercise-form').then((m) => m.ExerciseForm),
     title: 'Edit exercise · HomeLift',
+  },
+  {
+    path: 'history',
+    loadComponent: () => import('./history/history-page').then((m) => m.HistoryPage),
+    title: 'History · HomeLift',
   },
   {
     path: 'workout',

@@ -63,4 +63,18 @@ final class WorkoutDtos {
 
 	}
 
+	/** A finished workout in the history list. */
+	record WorkoutSummary(long id, @Nullable String name, Instant startedAt, @Nullable Instant finishedAt,
+			List<String> exercises, int sets, double volumeKg) {
+
+		static WorkoutSummary of(Workout w) {
+			var sets = w.getExercises().stream().flatMap((we) -> we.getSets().stream()).toList();
+			return new WorkoutSummary(w.getId(), w.getName(), w.getStartedAt(), w.getFinishedAt(),
+					w.getExercises().stream().filter((we) -> !we.getSets().isEmpty())
+						.map((we) -> we.getExercise().getName()).toList(),
+					sets.size(), Math.round(sets.stream().mapToDouble((s) -> s.getWeightKg() * s.getReps()).sum() * 10) / 10.0);
+		}
+
+	}
+
 }
