@@ -7,7 +7,14 @@ import { ExercisePicker } from './exercise-picker';
 import { RestTimer } from './rest-timer.service';
 import { RestTimerCard } from './rest-timer';
 import { Stepper } from './stepper';
-import { WEIGHT_STEP_KG, Workout, formatDuration, formatKg, nextSetDefaults } from './workout';
+import {
+  WEIGHT_STEP_KG,
+  Workout,
+  earnedProgression,
+  formatDuration,
+  formatKg,
+  nextSetDefaults,
+} from './workout';
 import { WorkoutService } from './workout.service';
 
 /** The workout in progress: pick an exercise, log sets with one tap, rest between them. */
@@ -113,7 +120,7 @@ export class WorkoutPage {
     if (!w || !ex) return;
     const finishesExercise = ex.sets.length + 1 >= ex.targetSets;
     this.run(this.api.logSet(w.id, ex.id, this.weight(), this.reps()), () => {
-      this.rest.start();
+      this.rest.start(ex.restSeconds ?? undefined);
       this.reload(() => {
         // Move on once the planned sets are done, if there is a next exercise.
         if (finishesExercise && this.index() < (this.workout()?.exercises.length ?? 0) - 1) {
@@ -161,9 +168,14 @@ export class WorkoutPage {
   }
 
   protected lastTimeSummary(): string {
-    const last = this.current()?.lastTime ?? [];
-    if (last.length === 0) return 'First time doing this one';
-    return 'Last time ' + last.map((s) => `${formatKg(s.weightKg)} × ${s.reps}`).join(', ');
+    const ex = this.current();
+    if (!ex) return '';
+    const plan = ex.targetReps ? `Target ${ex.targetSets} × ${ex.targetReps}` : null;
+    if (ex.lastTime.length === 0) return plan ?? 'First time doing this one';
+    const last =
+      'last time ' + ex.lastTime.map((s) => `${formatKg(s.weightKg)} × ${s.reps}`).join(', ');
+    const bump = earnedProgression(ex) ? ` · +${formatKg(WEIGHT_STEP_KG)} kg today` : '';
+    return plan ? `${plan} · ${last}${bump}` : last.charAt(0).toUpperCase() + last.slice(1);
   }
 
   private reload(then?: () => void): void {

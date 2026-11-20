@@ -8,6 +8,9 @@ function exercise(overrides: Partial<WorkoutExercise> = {}): WorkoutExercise {
     muscleGroup: 'CHEST',
     equipment: 'BARBELL',
     targetSets: 3,
+    targetReps: null,
+    restSeconds: null,
+    autoProgress: false,
     sets: [],
     lastTime: [],
     ...overrides,
@@ -48,5 +51,31 @@ describe('formatting', () => {
     expect(formatDuration(65)).toBe('1:05');
     expect(formatDuration(3725)).toBe('1:02:05');
     expect(formatDuration(-3)).toBe('0:00');
+  });
+});
+
+describe('auto progression', () => {
+  const planned = (lastReps: number[], autoProgress = true): WorkoutExercise =>
+    exercise({
+      targetSets: 3,
+      targetReps: 5,
+      autoProgress,
+      lastTime: lastReps.map((reps) => ({ weightKg: 80, reps })),
+    });
+
+  it('adds a step when every set hit the target last time', () => {
+    expect(nextSetDefaults(planned([5, 5, 6]))).toEqual({ weightKg: 82.5, reps: 5 });
+  });
+
+  it('repeats the weight when a set fell short', () => {
+    expect(nextSetDefaults(planned([5, 5, 4]))).toEqual({ weightKg: 80, reps: 5 });
+  });
+
+  it('stays put when auto progression is off', () => {
+    expect(nextSetDefaults(planned([5, 5, 5], false))).toEqual({ weightKg: 80, reps: 5 });
+  });
+
+  it('uses the planned reps when there is no history', () => {
+    expect(nextSetDefaults(exercise({ targetReps: 12 })).reps).toBe(12);
   });
 });

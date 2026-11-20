@@ -9,6 +9,7 @@ import { WorkoutPage } from './workout-page';
 const WORKOUT: Workout = {
   id: 7,
   name: 'Push A',
+  routineId: null,
   startedAt: new Date().toISOString(),
   finishedAt: null,
   exercises: [
@@ -19,6 +20,9 @@ const WORKOUT: Workout = {
       muscleGroup: 'CHEST',
       equipment: 'BARBELL',
       targetSets: 2,
+      targetReps: null,
+      restSeconds: null,
+      autoProgress: false,
       sets: [{ id: 100, setNumber: 1, weightKg: 82.5, reps: 5 }],
       lastTime: [
         { weightKg: 80, reps: 5 },
@@ -32,6 +36,9 @@ const WORKOUT: Workout = {
       muscleGroup: 'SHOULDERS',
       equipment: 'BARBELL',
       targetSets: 3,
+      targetReps: null,
+      restSeconds: null,
+      autoProgress: false,
       sets: [],
       lastTime: [],
     },

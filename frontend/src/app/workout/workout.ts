@@ -20,6 +20,12 @@ export interface WorkoutExercise {
   muscleGroup: MuscleGroup;
   equipment: Equipment;
   targetSets: number;
+  /** Planned reps per set when started from a routine. */
+  targetReps: number | null;
+  /** Rest after each set, in seconds, when started from a routine. */
+  restSeconds: number | null;
+  /** Add weight when every set last time reached the planned reps. */
+  autoProgress: boolean;
   sets: LoggedSet[];
   lastTime: PreviousSet[];
 }
@@ -27,6 +33,7 @@ export interface WorkoutExercise {
 export interface Workout {
   id: number;
   name: string | null;
+  routineId: number | null;
   startedAt: string;
   finishedAt: string | null;
   exercises: WorkoutExercise[];
@@ -36,14 +43,32 @@ export const WEIGHT_STEP_KG = 2.5;
 
 /**
  * Values to fill in for the next set: repeat what was just logged today, otherwise the same
- * set from last time, otherwise a sensible starting point for the equipment.
+ * set from last time (plus a step when auto progression earned it), otherwise a sensible
+ * starting point for the equipment.
  */
 export function nextSetDefaults(exercise: WorkoutExercise): PreviousSet {
   const today = exercise.sets.at(-1);
   if (today) return { weightKg: today.weightKg, reps: today.reps };
+  const target = exercise.targetReps;
   const previous = exercise.lastTime[0];
-  if (previous) return { ...previous };
-  return { weightKg: startingWeight(exercise.equipment), reps: 8 };
+  if (previous) {
+    if (earnedProgression(exercise))
+      return { weightKg: previous.weightKg + WEIGHT_STEP_KG, reps: target! };
+    return { weightKg: previous.weightKg, reps: target ?? previous.reps };
+  }
+  return { weightKg: startingWeight(exercise.equipment), reps: target ?? 8 };
+}
+
+/** True when auto progression is on and every planned set last time reached the planned reps. */
+export function earnedProgression(exercise: WorkoutExercise): boolean {
+  const target = exercise.targetReps;
+  const last = exercise.lastTime;
+  return (
+    exercise.autoProgress &&
+    target !== null &&
+    last.length >= exercise.targetSets &&
+    last.slice(0, exercise.targetSets).every((s) => s.reps >= target)
+  );
 }
 
 function startingWeight(equipment: Equipment): number {

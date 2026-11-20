@@ -18,6 +18,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import org.jspecify.annotations.Nullable;
 
 import app.homelift.exercise.Exercise;
 
@@ -43,6 +44,15 @@ public class WorkoutExercise {
 
 	@Column(name = "target_sets", nullable = false)
 	private int targetSets;
+
+	@Column(name = "target_reps")
+	private @Nullable Integer targetReps;
+
+	@Column(name = "rest_seconds")
+	private @Nullable Integer restSeconds;
+
+	@Column(name = "auto_progress", nullable = false)
+	private boolean autoProgress;
 
 	@OneToMany(mappedBy = "workoutExercise", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("setNumber")
@@ -76,6 +86,24 @@ public class WorkoutExercise {
 
 	public int getTargetSets() {
 		return this.targetSets;
+	}
+
+	public @Nullable Integer getTargetReps() {
+		return this.targetReps;
+	}
+
+	public @Nullable Integer getRestSeconds() {
+		return this.restSeconds;
+	}
+
+	public boolean isAutoProgress() {
+		return this.autoProgress;
+	}
+
+	void plan(int targetReps, int restSeconds, boolean autoProgress) {
+		this.targetReps = targetReps;
+		this.restSeconds = restSeconds;
+		this.autoProgress = autoProgress;
 	}
 
 	public List<WorkoutSet> getSets() {

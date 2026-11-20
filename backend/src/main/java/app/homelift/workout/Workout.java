@@ -34,6 +34,9 @@ public class Workout {
 	@Column(name = "finished_at")
 	private @Nullable Instant finishedAt;
 
+	@Column(name = "routine_id")
+	private @Nullable Long routineId;
+
 	@OneToMany(mappedBy = "workout", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("position")
 	private List<WorkoutExercise> exercises = new ArrayList<>();
@@ -60,6 +63,15 @@ public class Workout {
 
 	public @Nullable Instant getFinishedAt() {
 		return this.finishedAt;
+	}
+
+	/** The routine this workout was started from, if any. */
+	public @Nullable Long getRoutineId() {
+		return this.routineId;
+	}
+
+	void startedFrom(long routineId) {
+		this.routineId = routineId;
 	}
 
 	public boolean isInProgress() {

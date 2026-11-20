@@ -37,5 +37,20 @@ export const routes: Routes = [
     loadComponent: () => import('./stats/stats-page').then((m) => m.StatsPage),
     title: 'Stats · HomeLift',
   },
+  {
+    path: 'routines',
+    loadComponent: () => import('./routines/routines-page').then((m) => m.RoutinesPage),
+    title: 'Routines · HomeLift',
+  },
+  {
+    path: 'routines/new',
+    loadComponent: () => import('./routines/routine-editor').then((m) => m.RoutineEditor),
+    title: 'New routine · HomeLift',
+  },
+  {
+    path: 'routines/:id',
+    loadComponent: () => import('./routines/routine-editor').then((m) => m.RoutineEditor),
+    title: 'Edit routine · HomeLift',
+  },
   { path: '**', redirectTo: '' },
 ];

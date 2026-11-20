@@ -53,7 +53,7 @@ public class WorkoutService {
 	/** The workout with each exercise's sets and what was lifted the last time. */
 	public WorkoutView view(long id) {
 		Workout w = get(id);
-		return new WorkoutView(w.getId(), w.getName(), w.getStartedAt(), w.getFinishedAt(),
+		return new WorkoutView(w.getId(), w.getName(), w.getRoutineId(), w.getStartedAt(), w.getFinishedAt(),
 				w.getExercises().stream().map((we) -> ExerciseView.of(we, previousSets(we))).toList());
 	}
 
@@ -75,6 +75,19 @@ public class WorkoutService {
 		});
 		String cleanName = (name == null || name.isBlank()) ? null : name.strip();
 		return this.workouts.save(new Workout(cleanName, this.clock.instant()));
+	}
+
+	/** Starts a workout from a plan, such as a routine, with its exercises already added. */
+	@Transactional
+	public Workout startPlanned(String name, long routineId, List<PlannedExercise> plan) {
+		Workout workout = start(name);
+		workout.startedFrom(routineId);
+		for (PlannedExercise p : plan) {
+			workout.addExercise(this.exercises.get(p.exerciseId()), p.sets())
+				.plan(p.reps(), p.restSeconds(), p.autoProgress());
+		}
+		this.workouts.flush();
+		return workout;
 	}
 
 	@Transactional
