@@ -35,6 +35,7 @@ export interface ExerciseHistory {
 export interface WorkoutSummary {
   id: number;
   name: string | null;
+  routineId: number | null;
   startedAt: string;
   finishedAt: string | null;
   exercises: string[];

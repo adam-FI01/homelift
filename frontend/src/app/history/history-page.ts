@@ -15,7 +15,10 @@ import { HistoryService } from './history.service';
   template: `
     <header class="head">
       <h1>History</h1>
-      <a class="pill" routerLink="/stats">Stats</a>
+      <div class="pills">
+        <a class="pill" routerLink="/exercises">Exercises</a>
+        <a class="pill" routerLink="/stats">Stats</a>
+      </div>
     </header>
 
     @if (data(); as d) {
@@ -85,6 +88,7 @@ import { HistoryService } from './history.service';
       font-weight: 600;
       letter-spacing: -0.02em;
     }
+    .pills { display: flex; gap: 8px; }
     .pill {
       height: 36px;
       padding: 0 14px;

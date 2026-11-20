@@ -1,0 +1,121 @@
+<header class="top">
+  <span class="brand">HomeLift</span>
+  <span class="sub">{{ today }}</span>
+</header>
+
+@if (data(); as d) {
+  @if (offline()) {
+    <p class="card sub" role="alert">Server unreachable. Check that HomeLift is running.</p>
+  }
+
+  @if (d.week; as w) {
+    <a class="volume" routerLink="/stats" aria-label="Volume this week, open stats">
+      <span class="sub">Volume this week</span>
+      <span class="big"
+        >{{ w.totals.volumeKg | number: '1.0-0' }} <span class="unit">kg</span></span
+      >
+      @if (volumeChange(); as pct) {
+        <span class="delta" [class.down]="pct < 0"
+          >{{ pct > 0 ? '+' : '' }}{{ pct }}% vs last week</span
+        >
+      } @else {
+        <span class="sub">See your stats ›</span>
+      }
+    </a>
+  }
+
+  <section class="card next" aria-label="Up next">
+    @if (d.current; as c) {
+      <div class="next-head">
+        <div class="what">
+          <span class="sub">In progress</span>
+          <span class="name">{{ c.name ?? 'Workout' }}</span>
+        </div>
+      </div>
+      <a class="btn-primary" routerLink="/workout">Continue workout</a>
+    } @else if (upNext(); as r) {
+      <div class="next-head">
+        <div class="what">
+          <span class="sub">Up next</span>
+          <span class="name">{{ r.name }}</span>
+        </div>
+        <span class="sub">About {{ r.estimatedMinutes }} min</span>
+      </div>
+      <span class="sub">{{ summary(r) }}</span>
+      <button type="button" class="btn-primary" (click)="start(r)">Start workout</button>
+      <a class="quiet" routerLink="/workout">Or start an empty workout</a>
+    } @else {
+      <div class="what">
+        <span class="sub">Ready when you are</span>
+        <span class="name">Start a workout</span>
+      </div>
+      <span class="sub">Add exercises as you go, or save a routine to start it with one tap.</span>
+      <a class="btn-primary" routerLink="/workout">Start workout</a>
+      <a class="quiet" routerLink="/routines/new">Create a routine</a>
+    }
+  </section>
+
+  <section class="card week" aria-label="This week">
+    <div class="week-head">
+      <span class="label">This week</span>
+      <span class="sub"
+        >{{ d.week?.totals?.workouts ?? 0 }}
+        {{ (d.week?.totals?.workouts ?? 0) === 1 ? 'session' : 'sessions' }}</span
+      >
+    </div>
+    <ol class="days">
+      @for (day of week(); track $index) {
+        <li [class.today]="day.today">
+          <span class="letter" aria-hidden="true">{{ day.letter }}</span>
+          <span
+            class="dot"
+            [class.done]="day.done"
+            [attr.aria-label]="day.label + (day.done ? ': trained' : ': rest')"
+            role="img"
+          >
+            @if (day.done) {
+              <svg
+                aria-hidden="true"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path d="M5 12l5 5L20 7" />
+              </svg>
+            }
+          </span>
+        </li>
+      }
+    </ol>
+  </section>
+
+  @if (records().length > 0) {
+    <section class="card records" aria-label="Recent records">
+      @for (r of records(); track r.exerciseId) {
+        <a [routerLink]="['/exercises', r.exerciseId]">
+          <div class="what">
+            <span class="rec-name">{{ r.name }}</span>
+            <span class="sub small">New record · {{ dayName(r.date) }}</span>
+          </div>
+          <span class="rec-val">{{ r.weightKg | number: '1.0-1' }} kg × {{ r.reps }}</span>
+          <svg
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </a>
+      }
+    </section>
+  }
+} @else {
+  <p class="sub">Loading…</p>
+}
