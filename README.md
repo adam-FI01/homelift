@@ -6,7 +6,15 @@
 
 A self-hosted workout tracker made for a home server. HomeLift ships as one small container with an embedded SQLite database, so it runs on a Raspberry Pi as easily as on a desktop, and your training history stays on your own hardware.
 
-> **Status:** early development. The project skeleton, CI, and container image are in place. Workout logging is next.
+> **Status:** usable day to day. Log workouts, follow routines, track progress and back up your data.
+
+## Features
+
+- **Log sets with one tap.** Each set is prefilled from the last one, or from last time, with big +/− controls and a rest timer that survives a reload.
+- **Routines.** Save plans like "Push A" with sets, reps and rest, and start them with one tap. Optional auto progression adds 2.5 kg once every set hits its reps.
+- **Progress.** Estimated 1-rep max (Epley) over time per exercise, records, and every past session.
+- **Stats.** A Wrapped-style recap for any day, week, month, quarter or year: volume, records, top lifts, muscle focus, streaks and habits.
+- **Your data.** Download a full database backup, a CSV of every set, or a JSON dump at any time.
 
 ## Quick start
 
@@ -120,6 +128,20 @@ cd backend && ./mvnw verify          # also builds the UI into the jar
 docker build -t homelift .
 ```
 
+## API
+
+Everything the UI does goes through a JSON API under `/api`. Errors use RFC 9457 `problem+json`.
+
+| Area      | Endpoints |
+| --------- | --------- |
+| Exercises | `GET/POST /api/exercises`, `GET/PUT /api/exercises/{id}`, `POST …/{id}/archive`, `POST …/{id}/restore`, `GET …/{id}/history` |
+| Workouts  | `GET /api/workouts`, `GET /api/workouts/current`, `POST /api/workouts`, `GET/DELETE /api/workouts/{id}`, `POST …/{id}/exercises`, `DELETE …/{id}/exercises/{exerciseId}`, `POST/DELETE …/sets`, `POST …/{id}/finish` |
+| Routines  | `GET/POST /api/routines`, `GET/PUT/DELETE /api/routines/{id}`, `POST …/{id}/start` |
+| Stats     | `GET /api/stats?period=DAY\|WEEK\|MONTH\|QUARTER\|YEAR&date=&zone=` |
+| Export    | `GET /api/export/homelift.db`, `GET /api/export/sets.csv`, `GET /api/export/backup.json` |
+
+A [Postman](https://www.postman.com/) collection covering every endpoint lives in [`postman/`](postman). Import both files, pick the **HomeLift local** environment (`http://localhost:8080`), and run the folders top to bottom: requests that create things save their ids for the next ones. For your own server, duplicate the environment and change `baseUrl`.
+
 ## Branches and releases
 
 ```
@@ -134,10 +156,12 @@ feature/* ──PR──► qa ──PR──► main ──► ghcr.io/adam-fi0
 ## Roadmap
 
 - [x] Project skeleton, CI, multi-arch image
-- [ ] Exercise library
-- [ ] Log workouts and sets
-- [ ] History and progress charts
-- [ ] Data export and backup
+- [x] Exercise library
+- [x] Log workouts and sets, with a rest timer
+- [x] Routines with auto progression
+- [x] History, records and estimated 1RM charts
+- [x] Stats for any day, week, month, quarter or year
+- [x] Data export and backup
 - [ ] Optional GraalVM native image
 
 ## License
