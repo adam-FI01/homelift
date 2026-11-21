@@ -25,14 +25,14 @@ class SettingsApiTests {
 			.bodyJson()
 			.isLenientlyEqualTo("""
 					{"defaultRestSeconds":120,"autoStartRest":true,"restSound":true,"restVibrate":true,
-					 "units":"KG","theme":"SYSTEM"}""");
+					 "units":"KG","theme":"SYSTEM","barKg":null}""");
 	}
 
 	@Test
 	void savesAndReadsBack() {
 		String body = """
 				{"defaultRestSeconds":90,"autoStartRest":false,"restSound":false,"restVibrate":true,
-				 "units":"LB","theme":"DARK"}""";
+				 "units":"LB","theme":"DARK","barKg":15}""";
 		assertThat(this.mvc.put().uri("/api/settings").contentType(MediaType.APPLICATION_JSON).content(body))
 			.hasStatusOk();
 		assertThat(this.mvc.get().uri("/api/settings")).bodyJson().isLenientlyEqualTo(body);

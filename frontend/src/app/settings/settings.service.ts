@@ -6,6 +6,7 @@ import {
   Settings,
   formatNumber,
   fromDisplay,
+  standardBar,
   toDisplay,
   weightStep,
 } from './settings';
@@ -25,6 +26,13 @@ export class SettingsService {
   readonly units = computed(() => this.settings().units);
   readonly unitLabel = computed(() => (this.units() === 'LB' ? 'lb' : 'kg'));
   readonly weightStep = computed(() => weightStep(this.units()));
+  /** The bar weight in the chosen unit. */
+  readonly bar = computed(() => {
+    const kg = this.settings().barKg;
+    return kg == null
+      ? standardBar(this.units())
+      : Math.round(toDisplay(kg, this.units()) * 10) / 10;
+  });
   /** The step in kg, for logic that works in stored units. */
   readonly weightStepKg = computed(() => fromDisplay(this.weightStep(), this.units()));
 
@@ -53,6 +61,12 @@ export class SettingsService {
       next: (s) => this.apply(s),
       error: () => undefined,
     });
+  }
+
+  /** Saves a bar weight typed in the chosen unit; the usual bar is stored as "default". */
+  setBar(value: number): void {
+    const units = this.units();
+    this.update({ barKg: value === standardBar(units) ? null : fromDisplay(value, units) });
   }
 
   /** A weight in the chosen unit, as a number. */

@@ -9,6 +9,7 @@ import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from './exercise-picker';
+import { PlateCalculator } from './plate-calculator';
 import { RestTimer } from './rest-timer.service';
 import { RestTimerCard } from './rest-timer';
 import { Stepper } from './stepper';
@@ -28,7 +29,7 @@ import { WorkoutService } from './workout.service';
 /** The workout in progress: pick an exercise, log sets with one tap, rest between them. */
 @Component({
   selector: 'app-workout-page',
-  imports: [RouterLink, Stepper, RestTimerCard, ExercisePicker, Sheet, WeightPipe],
+  imports: [RouterLink, Stepper, RestTimerCard, ExercisePicker, Sheet, WeightPipe, PlateCalculator],
   templateUrl: './workout-page.html',
   styleUrl: './workout-page.scss',
 })
@@ -50,6 +51,7 @@ export class WorkoutPage {
   });
   protected readonly picking = signal(false);
   protected readonly finishing = signal(false);
+  protected readonly plates = signal(false);
   /** The logged set being corrected in the edit sheet, with draft values. */
   protected readonly editing = signal<{ set: LoggedSet } | null>(null);
   protected readonly editWeight = signal(0);

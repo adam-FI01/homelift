@@ -128,6 +128,12 @@
         }
       </section>
 
+      @if (ex.equipment === 'BARBELL') {
+        <button type="button" class="plates-link" (click)="plates.set(true)">
+          Plates for {{ weight() }} {{ unit() }}
+        </button>
+      }
+
       @if (hint(); as h) {
         <button type="button" class="hint" (click)="applyHint()">
           <span class="hint-try">Try {{ h.weightKg | weight }} × {{ h.reps }}</span>
@@ -226,6 +232,16 @@
         <button type="button" class="link danger" [disabled]="busy()" (click)="deleteSet()">
           Delete set
         </button>
+      }
+    </app-sheet>
+
+    <app-sheet
+      [title]="'Plates for ' + weight() + ' ' + unit()"
+      [open]="plates()"
+      (closed)="plates.set(false)"
+    >
+      @if (plates()) {
+        <app-plate-calculator [total]="weight()" />
       }
     </app-sheet>
 

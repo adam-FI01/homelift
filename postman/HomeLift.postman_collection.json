@@ -1186,10 +1186,10 @@
                 "settings"
               ]
             },
-            "description": "Replaces all settings. units: KG or LB. theme: SYSTEM, LIGHT or DARK.",
+            "description": "Replaces all settings. units: KG or LB. theme: SYSTEM, LIGHT or DARK. barKg: bar weight in kg for the plate calculator, or null for the usual 20 kg / 45 lb bar.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"defaultRestSeconds\": 120,\n  \"autoStartRest\": true,\n  \"restSound\": true,\n  \"restVibrate\": true,\n  \"units\": \"KG\",\n  \"theme\": \"SYSTEM\"\n}",
+              "raw": "{\n  \"defaultRestSeconds\": 120,\n  \"autoStartRest\": true,\n  \"restSound\": true,\n  \"restVibrate\": true,\n  \"units\": \"KG\",\n  \"theme\": \"SYSTEM\",\n  \"barKg\": null\n}",
               "options": {
                 "raw": {
                   "language": "json"

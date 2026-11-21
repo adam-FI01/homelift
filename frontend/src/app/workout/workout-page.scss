@@ -318,3 +318,14 @@
   font-weight: 600;
   color: var(--pos);
 }
+.plates-link {
+  align-self: flex-end;
+  margin: -8px 0;
+  border: 0;
+  background: none;
+  padding: 6px 0;
+  color: var(--sub);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,8 @@ public class SettingsService {
 				read(stored, "autoStartRest", Boolean::valueOf, d.autoStartRest()),
 				read(stored, "restSound", Boolean::valueOf, d.restSound()),
 				read(stored, "restVibrate", Boolean::valueOf, d.restVibrate()),
-				read(stored, "units", Units::valueOf, d.units()), read(stored, "theme", Theme::valueOf, d.theme()));
+				read(stored, "units", Units::valueOf, d.units()), read(stored, "theme", Theme::valueOf, d.theme()),
+				read(stored, "barKg", (v) -> v.isEmpty() ? null : Double.valueOf(v), d.barKg()));
 	}
 
 	@Transactional
@@ -44,6 +46,7 @@ public class SettingsService {
 		write("restVibrate", settings.restVibrate());
 		write("units", settings.units());
 		write("theme", settings.theme());
+		write("barKg", (settings.barKg() != null) ? settings.barKg() : "");
 		return get();
 	}
 
@@ -55,7 +58,8 @@ public class SettingsService {
 	}
 
 	/** A stored value that no longer parses (say, after an upgrade) falls back to the default. */
-	private static <T> T read(Map<String, String> stored, String key, Function<String, T> parse, T fallback) {
+	private static <T> @Nullable T read(Map<String, String> stored, String key, Function<String, @Nullable T> parse,
+			@Nullable T fallback) {
 		String raw = stored.get(key);
 		if (raw == null) {
 			return fallback;
