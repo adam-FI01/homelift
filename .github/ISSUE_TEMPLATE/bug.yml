@@ -1,0 +1,34 @@
+name: Bug
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Tap …
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Settings › About shows it, e.g. 1.0.0.
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options: [Phone browser, Installed app (home screen), Desktop browser, API, Docker or server]
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Any error message, or log lines with the X-Request-Id. Leave out anything private.
+      render: text
