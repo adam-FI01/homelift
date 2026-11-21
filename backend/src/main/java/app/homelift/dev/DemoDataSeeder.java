@@ -43,7 +43,7 @@ class DemoDataSeeder implements ApplicationRunner {
 
 	private static final int DAYS = 120;
 
-	/** Exercise, sets, reps, rest in seconds, starting weight, weekly gain, auto progression. */
+	/** Exercise, sets, reps, rest in seconds (the app's 2 minute default), starting weight, weekly gain, auto progression. */
 	private record Plan(String exercise, int sets, int reps, int rest, double startKg, double weeklyGainKg,
 			boolean auto) {
 	}
@@ -51,18 +51,18 @@ class DemoDataSeeder implements ApplicationRunner {
 	private static final Map<String, List<Plan>> ROUTINES = new LinkedHashMap<>();
 
 	static {
-		ROUTINES.put("Push", List.of(new Plan("Bench Press", 5, 5, 150, 70, 1.0, true),
+		ROUTINES.put("Push", List.of(new Plan("Bench Press", 5, 5, 120, 70, 1.0, true),
 				new Plan("Overhead Press", 3, 8, 120, 40, 0.5, false),
-				new Plan("Incline Dumbbell Press", 3, 10, 90, 22, 0.25, false),
-				new Plan("Lateral Raise", 4, 15, 45, 8, 0.1, false),
-				new Plan("Triceps Pushdown", 3, 12, 60, 25, 0.4, false)));
-		ROUTINES.put("Pull", List.of(new Plan("Deadlift", 3, 5, 180, 110, 1.5, true),
+				new Plan("Incline Dumbbell Press", 3, 10, 120, 22, 0.25, false),
+				new Plan("Lateral Raise", 4, 15, 120, 8, 0.1, false),
+				new Plan("Triceps Pushdown", 3, 12, 120, 25, 0.4, false)));
+		ROUTINES.put("Pull", List.of(new Plan("Deadlift", 3, 5, 120, 110, 1.5, true),
 				new Plan("Barbell Row", 4, 8, 120, 60, 0.75, false), new Plan("Pull-up", 3, 8, 120, 0, 0, false),
-				new Plan("Face Pull", 3, 15, 60, 20, 0.2, false), new Plan("Barbell Curl", 3, 10, 60, 30, 0.3, false)));
-		ROUTINES.put("Legs", List.of(new Plan("Back Squat", 5, 5, 180, 90, 1.25, true),
+				new Plan("Face Pull", 3, 15, 120, 20, 0.2, false), new Plan("Barbell Curl", 3, 10, 120, 30, 0.3, false)));
+		ROUTINES.put("Legs", List.of(new Plan("Back Squat", 5, 5, 120, 90, 1.25, true),
 				new Plan("Romanian Deadlift", 3, 8, 120, 80, 1.0, false),
-				new Plan("Leg Press", 3, 12, 90, 140, 2.0, false), new Plan("Leg Curl", 3, 12, 60, 40, 0.4, false),
-				new Plan("Calf Raise", 4, 15, 45, 60, 0.5, false)));
+				new Plan("Leg Press", 3, 12, 120, 140, 2.0, false), new Plan("Leg Curl", 3, 12, 120, 40, 0.4, false),
+				new Plan("Calf Raise", 4, 15, 120, 60, 0.5, false)));
 	}
 
 	private final JdbcTemplate jdbc;
