@@ -20,7 +20,9 @@ class HomeLiftApplicationTests {
 		assertThat(this.mvc.get().uri("/api/status")).hasStatusOk()
 			.bodyJson()
 			.hasPathSatisfying("$.name", (name) -> assertThat(name).asString().isEqualTo("HomeLift"))
-			.hasPathSatisfying("$.sqliteVersion", (v) -> assertThat(v).asString().isNotBlank());
+			.hasPathSatisfying("$.sqliteVersion", (v) -> assertThat(v).asString().isNotBlank())
+			.hasPathSatisfying("$.javaVersion", (v) -> assertThat(v).isEqualTo(Runtime.version().feature()))
+			.hasPathSatisfying("$.databaseBytes", (v) -> assertThat(v).asNumber().isNotEqualTo(0));
 	}
 
 	@Test

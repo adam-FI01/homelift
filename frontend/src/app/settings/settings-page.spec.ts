@@ -16,7 +16,15 @@ describe('SettingsPage', () => {
     const fixture = TestBed.createComponent(SettingsPage);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
-    http.expectOne('/api/status').flush({ version: '0.1.0', sqliteVersion: '3.54.1' });
+    http.expectOne('/api/status').flush({
+      version: '0.1.0',
+      sqliteVersion: '3.54.1',
+      javaVersion: 25,
+      uptimeSeconds: 93_784,
+      databaseBytes: 2_621_440,
+      workouts: 61,
+      sets: 1058,
+    });
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
     return { fixture, http, el };
@@ -62,6 +70,9 @@ describe('SettingsPage', () => {
       '/api/export/sets.csv',
       '/api/export/backup.json',
     ]);
-    expect(el.textContent).toContain('HomeLift 0.1.0');
+    expect(el.textContent).toContain('Server healthy');
+    expect(el.textContent).toContain('up 1d 2h');
+    expect(el.textContent).toContain('2.5 MB · SQLite 3.54.1');
+    expect(el.textContent).toContain('61 workouts · 1058 sets');
   });
 });

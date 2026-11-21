@@ -133,6 +133,44 @@
   </details>
 </section>
 
+<section class="group" aria-labelledby="about-title">
+  <h2 id="about-title">About</h2>
+  <div class="card list">
+    @if (status() === undefined) {
+      <div class="row"><span class="sub">Checking the server…</span></div>
+    } @else if (status(); as st) {
+      <div class="row">
+        <span class="name grow"><span class="dot on" aria-hidden="true"></span>Server healthy</span>
+        <span class="sub">up {{ uptime(st.uptimeSeconds) }}</span>
+      </div>
+      <dl class="facts">
+        <div>
+          <dt>Version</dt>
+          <dd>{{ st.version }}</dd>
+        </div>
+        <div>
+          <dt>Database</dt>
+          <dd>{{ size(st.databaseBytes) }} · SQLite {{ st.sqliteVersion }}</dd>
+        </div>
+        <div>
+          <dt>Logged</dt>
+          <dd>{{ st.workouts }} workouts · {{ st.sets }} sets</dd>
+        </div>
+        <div>
+          <dt>Java</dt>
+          <dd>{{ st.javaVersion }}</dd>
+        </div>
+      </dl>
+    } @else {
+      <div class="row">
+        <span class="name grow"
+          ><span class="dot off" aria-hidden="true"></span>Server unreachable</span
+        >
+      </div>
+    }
+  </div>
+</section>
+
 <section class="group" aria-labelledby="more-title">
   <h2 id="more-title">More</h2>
   <div class="card list">
@@ -165,5 +203,4 @@
       </svg>
     </a>
   </div>
-  <p class="note">{{ version() ?? '' }}</p>
 </section>

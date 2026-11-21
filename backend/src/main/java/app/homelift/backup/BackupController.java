@@ -77,7 +77,7 @@ class BackupController {
 	ResponseEntity<Map<String, Object>> json() {
 		Map<String, Object> tables = new LinkedHashMap<>();
 		for (String table : TABLES) {
-			tables.put(table, this.jdbc.queryForList("select * from " + table + " order by id"));
+			tables.put(table, this.jdbc.queryForList("select * from " + table + " order by 1"));
 		}
 		Map<String, Object> body = new LinkedHashMap<>();
 		body.put("app", "HomeLift");

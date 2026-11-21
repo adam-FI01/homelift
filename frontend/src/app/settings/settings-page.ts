@@ -2,10 +2,20 @@ import { Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { catchError, map, of } from 'rxjs';
+import { catchError, of } from 'rxjs';
 import { formatDuration } from '../workout/workout';
 import { Settings, Theme, Units } from './settings';
 import { SettingsService } from './settings.service';
+
+interface ServerStatus {
+  version: string;
+  sqliteVersion: string;
+  javaVersion: number;
+  uptimeSeconds: number;
+  databaseBytes: number;
+  workouts: number;
+  sets: number;
+}
 
 type Toggle = 'autoStartRest' | 'restSound' | 'restVibrate';
 
@@ -53,14 +63,26 @@ export class SettingsPage {
     },
   ];
 
-  protected readonly version = toSignal(
+  /** Server facts for the "About" section, or null when the server can't be reached. */
+  protected readonly status = toSignal(
     inject(HttpClient)
-      .get<{ version: string; sqliteVersion: string }>('/api/status')
-      .pipe(
-        map((s) => `HomeLift ${s.version} · SQLite ${s.sqliteVersion}`),
-        catchError(() => of('Server unreachable')),
-      ),
+      .get<ServerStatus>('/api/status')
+      .pipe(catchError(() => of(null))),
+    { initialValue: undefined },
   );
+
+  protected uptime(seconds: number): string {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+
+  protected size(bytes: number): string {
+    return bytes >= 1_048_576
+      ? `${(bytes / 1_048_576).toFixed(1)} MB`
+      : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
 
   protected set(change: Partial<Settings>): void {
     this.service.update(change);

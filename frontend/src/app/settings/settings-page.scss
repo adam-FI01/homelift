@@ -154,3 +154,40 @@ code {
   padding: 1px 5px;
   border-radius: 4px;
 }
+
+.grow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.dot.on {
+  background: var(--pos);
+}
+.dot.off {
+  background: var(--neg);
+}
+.facts {
+  margin: 0 0 6px;
+  border-top: 1px solid var(--line);
+  padding: 6px 0;
+}
+.facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+.facts dt {
+  color: var(--sub);
+}
+.facts dd {
+  margin: 0;
+  text-align: right;
+}
