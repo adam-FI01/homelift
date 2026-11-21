@@ -58,5 +58,10 @@ export const routes: Routes = [
     title: 'Settings · HomeLift',
   },
   { path: 'data', redirectTo: 'settings' },
+  {
+    path: 'body',
+    loadComponent: () => import('./body/body-page').then((m) => m.BodyPage),
+    title: 'Body · HomeLift',
+  },
   { path: '**', redirectTo: '' },
 ];

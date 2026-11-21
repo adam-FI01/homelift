@@ -120,8 +120,23 @@ class DemoDataSeeder implements ApplicationRunner {
 			sets += insertWorkout(routine, routineIds.get(routine), day, weeks, random, exerciseIds);
 			done++;
 		}
+		insertBodyMetrics(today, random);
 		logger.info("Demo data added: {} routines, {} workouts and {} sets over the last {} days.", routineIds.size(),
 				done, sets, DAYS);
+	}
+
+	/** Body weight every few days, drifting down with daily noise, and a monthly waist measurement. */
+	private void insertBodyMetrics(LocalDate today, Random random) {
+		for (LocalDate day = today.minusDays(DAYS); !day.isAfter(today); day = day.plusDays(3 + random.nextInt(2))) {
+			double progress = java.time.temporal.ChronoUnit.DAYS.between(today.minusDays(DAYS), day) / (double) DAYS;
+			double weight = 84 - 2.5 * progress + (random.nextDouble() - 0.5) * 0.8;
+			this.jdbc.update("insert into body_metric (measured_on, kind, value) values (?, 'WEIGHT', ?)", day.toString(),
+					Math.round(weight * 10) / 10.0);
+		}
+		for (int month = 4; month >= 0; month--) {
+			this.jdbc.update("insert into body_metric (measured_on, kind, value) values (?, 'WAIST', ?)",
+					today.minusMonths(month).withDayOfMonth(1).toString(), 88 - (4 - month) * 0.7);
+		}
 	}
 
 	private long insertRoutine(String name, List<Plan> plans, Map<String, Long> exerciseIds) {

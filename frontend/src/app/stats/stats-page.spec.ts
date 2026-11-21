@@ -108,4 +108,22 @@ describe('StatsPage', () => {
       '2025-01-01',
     );
   });
+
+  it('charts body weight for the period', async () => {
+    const { fixture, http, el } = await setup();
+    http.expectOne((r) => r.url === '/api/stats').flush(WEEK);
+    await fixture.whenStable();
+    const body = http.expectOne((r) => r.url === '/api/body');
+    expect(body.request.params.get('from')).toBe('2026-11-16');
+    expect(body.request.params.get('to')).toBe('2026-11-23');
+    body.flush([
+      { id: 1, date: '2026-11-16', kind: 'WEIGHT', value: 82 },
+      { id: 2, date: '2026-11-20', kind: 'WEIGHT', value: 81.5 },
+    ]);
+    await fixture.whenStable();
+    const card = el.querySelector('[aria-label="Body weight"]')!;
+    expect(card.textContent).toContain('81.5');
+    expect(card.textContent).toContain('-0.5 this week');
+    expect(card.querySelector('app-line-chart')).not.toBeNull();
+  });
 });

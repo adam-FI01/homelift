@@ -6,6 +6,8 @@ import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { SettingsService } from '../settings/settings.service';
 import { WeightPipe } from '../settings/weight.pipe';
 import { LineChart } from '../shared/line-chart';
+import { BodyMetric, toShown } from '../body/body';
+import { BodyService } from '../body/body.service';
 import { BarChart } from './bar-chart';
 import {
   PERIODS,
@@ -58,6 +60,40 @@ export class StatsPage {
   protected readonly stats = computed(() => {
     const l = this.load();
     return l.status === 'ready' ? l.stats : null;
+  });
+
+  private readonly bodyApi = inject(BodyService);
+
+  /** Body weight entries inside the period being shown. */
+  private readonly bodyEntries = toSignal(
+    toObservable(this.stats).pipe(
+      switchMap((s) =>
+        s
+          ? this.bodyApi
+              .list('WEIGHT', s.start, s.end)
+              .pipe(catchError(() => of([] as BodyMetric[])))
+          : of([]),
+      ),
+    ),
+    { initialValue: [] as BodyMetric[] },
+  );
+
+  protected readonly body = computed(() => {
+    const list = this.bodyEntries();
+    if (list.length === 0) return null;
+    const units = this.settings.units();
+    const shown = list.map((e) => ({
+      x: localDate(e.date).getTime(),
+      y: toShown('WEIGHT', e.value, units),
+    }));
+    const first = shown[0].y;
+    const last = shown.at(-1)!.y;
+    return {
+      latest: last,
+      change: shown.length > 1 ? Math.round((last - first) * 10) / 10 : null,
+      points: shown,
+      label: `Body weight this ${this.noun()}, from ${first} to ${last} ${this.unit()}`,
+    };
   });
 
   protected readonly title = computed(() => {

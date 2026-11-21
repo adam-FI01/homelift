@@ -13,6 +13,7 @@
     </svg>
   </a>
   <h1>Stats</h1>
+  <a class="pill" routerLink="/body">Body</a>
 </header>
 
 <div class="periods" role="group" aria-label="Period">
@@ -225,6 +226,23 @@
           </div>
         </dl>
       </section>
+    }
+
+    @if (body(); as bw) {
+      <a class="card story" routerLink="/body" aria-label="Body weight">
+        <span class="kicker">Body weight</span>
+        <span class="headline"
+          >{{ bw.latest }} <span class="unit">{{ unit() }}</span>
+          @if (bw.change !== null) {
+            <span class="unit"
+              >· {{ bw.change > 0 ? '+' : '' }}{{ bw.change }} this {{ noun() }}</span
+            >
+          }
+        </span>
+        @if (bw.points.length > 1) {
+          <app-line-chart [points]="bw.points" [label]="bw.label" [unit]="unit()" />
+        }
+      </a>
     }
 
     @if (s.biggestSession; as b) {

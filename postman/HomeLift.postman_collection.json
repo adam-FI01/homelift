@@ -1212,6 +1212,122 @@
       ]
     },
     {
+      "name": "Body",
+      "description": "Body weight and measurements. Weight is stored in kg, lengths in cm, body fat in percent.",
+      "item": [
+        {
+          "name": "Log body weight",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/body",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "body"
+              ]
+            },
+            "description": "One value per kind per day; saving again replaces it. kind: WEIGHT, BODY_FAT, WAIST, CHEST, ARM, THIGH, HIPS, NECK.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"{{today}}\",\n  \"kind\": \"WEIGHT\",\n  \"value\": 81.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('bodyMetricId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List body weight",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/body?kind=WEIGHT",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "body"
+              ],
+              "query": [
+                {
+                  "key": "kind",
+                  "value": "WEIGHT"
+                }
+              ]
+            },
+            "description": "Optional kind, from (inclusive) and to (exclusive) dates. Oldest first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete entry",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/body/{{bodyMetricId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "body",
+                "{{bodyMetricId}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Export",
       "description": "Downloads for backups and spreadsheets. Use Send and Download in Postman.",
       "item": [
@@ -1354,6 +1470,10 @@
     {
       "key": "zone",
       "value": "UTC"
+    },
+    {
+      "key": "bodyMetricId",
+      "value": ""
     }
   ]
 }

@@ -36,7 +36,7 @@ class BackupController {
 
 	/** Tables in the JSON dump, parents before children. */
 	static final List<String> TABLES = List.of("exercise", "routine", "routine_exercise", "workout",
-			"workout_exercise", "workout_set");
+			"workout_exercise", "workout_set", "body_metric", "app_setting");
 
 	private final TrainingLog log;
 

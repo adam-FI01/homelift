@@ -12,6 +12,19 @@
   gap: 4px;
   margin-left: -10px;
 }
+.pill {
+  margin-left: auto;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  background: var(--soft);
+  color: var(--ink);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+}
 .head h1 {
   margin: 0;
   font-size: 28px;
