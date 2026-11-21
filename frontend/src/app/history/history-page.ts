@@ -1,193 +1,170 @@
-import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { Exercise } from '../exercises/exercise';
 import { ExerciseService } from '../exercises/exercise.service';
-import { formatDuration } from '../workout/workout';
-import { shortDate } from './history';
+import { SettingsService } from '../settings/settings.service';
+import { WeightPipe } from '../settings/weight.pipe';
+import { ConfirmService } from '../shared/confirm.service';
+import { Sheet } from '../shared/sheet';
+import { Workout, formatDuration } from '../workout/workout';
+import { WorkoutService } from '../workout/workout.service';
+import { WorkoutSummary, describeSets } from './history';
 import { HistoryService } from './history.service';
 
-/** Recent workouts, and every exercise you have trained with a link to its progress. */
+const PAGE = 50;
+
+type Tab = 'workouts' | 'exercises';
+
+export interface MonthGroup {
+  key: string;
+  title: string;
+  volumeKg: number;
+  workouts: WorkoutSummary[];
+}
+
+/** Groups workouts (newest first) by calendar month, with each month's total volume. */
+export function groupByMonth(workouts: WorkoutSummary[]): MonthGroup[] {
+  const groups: MonthGroup[] = [];
+  for (const w of workouts) {
+    const d = new Date(w.startedAt);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    let g = groups.at(-1);
+    if (!g || g.key !== key) {
+      g = {
+        key,
+        title: d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+        volumeKg: 0,
+        workouts: [],
+      };
+      groups.push(g);
+    }
+    g.workouts.push(w);
+    g.volumeKg += w.volumeKg;
+  }
+  return groups;
+}
+
+/** Past workouts by month, or the exercises you have trained; tap a workout to see every set. */
 @Component({
   selector: 'app-history-page',
-  imports: [RouterLink, DecimalPipe],
-  template: `
-    <header class="head">
-      <h1>History</h1>
-      <div class="pills">
-        <a class="pill" routerLink="/exercises">Exercises</a>
-        <a class="pill" routerLink="/stats">Stats</a>
-      </div>
-    </header>
-
-    @if (data(); as d) {
-      @if (d.workouts.length === 0) {
-        <section class="card empty">
-          <p>Finished workouts show up here.</p>
-          <a class="btn-primary" routerLink="/workout">Start a workout</a>
-        </section>
-      } @else {
-        <section aria-label="Exercises you have trained" class="block">
-          <span class="title">Exercises</span>
-          <div class="card list">
-            @for (e of trained(); track e.id) {
-              <a class="row" [routerLink]="['/exercises', e.id]">
-                <span class="name">{{ e.name }}</span>
-                <svg
-                  aria-hidden="true"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M9 6l6 6-6 6" />
-                </svg>
-              </a>
-            }
-          </div>
-        </section>
-
-        <section aria-label="Recent workouts" class="block">
-          <span class="title">Workouts</span>
-          <div class="card list">
-            @for (w of d.workouts; track w.id) {
-              <div class="row">
-                <div class="what">
-                  <span class="name">{{ w.name ?? 'Workout' }} · {{ shortDate(w.startedAt) }}</span>
-                  <span class="sub">{{ w.exercises.join(', ') || 'No sets logged' }}</span>
-                </div>
-                <div class="nums">
-                  <span>{{ w.volumeKg | number: '1.0-0' }} kg</span>
-                  <span class="sub">{{ duration(w.startedAt, w.finishedAt) }}</span>
-                </div>
-              </div>
-            }
-          </div>
-        </section>
-      }
-    } @else {
-      <p class="sub">Loading…</p>
-    }
-  `,
-  styles: `
-    :host {
-      display: contents;
-    }
-    .head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 4px;
-    }
-    h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-    .pills {
-      display: flex;
-      gap: 8px;
-    }
-    .pill {
-      height: 36px;
-      padding: 0 14px;
-      border-radius: 18px;
-      background: var(--soft);
-      color: var(--ink);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .block {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .title {
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .list {
-      padding: 0 16px;
-    }
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      min-height: 56px;
-      gap: 12px;
-      color: var(--ink);
-      text-decoration: none;
-    }
-    .row + .row {
-      border-top: 1px solid var(--line);
-    }
-    a.row svg {
-      color: var(--sub);
-      flex: none;
-    }
-    .what {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-    .what .sub {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .name {
-      font-size: 15px;
-      font-weight: 500;
-    }
-    .nums {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 2px;
-      font-size: 14px;
-      flex: none;
-    }
-    .sub {
-      font-size: 13px;
-      color: var(--sub);
-    }
-    .empty {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      text-align: center;
-    }
-    .empty p {
-      margin: 0;
-      color: var(--sub);
-    }
-  `,
+  imports: [RouterLink, Sheet, WeightPipe],
+  templateUrl: './history-page.html',
+  styleUrl: './history-page.scss',
 })
 export class HistoryPage {
-  protected readonly shortDate = shortDate;
+  private readonly history = inject(HistoryService);
+  private readonly workouts = inject(WorkoutService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly settings = inject(SettingsService);
+  private readonly exercisesApi = inject(ExerciseService);
 
-  protected readonly data = toSignal(
-    forkJoin({
-      workouts: inject(HistoryService).recentWorkouts(100),
-      exercises: inject(ExerciseService).list(),
-    }).pipe(catchError(() => of({ workouts: [], exercises: [] }))),
+  protected readonly tab = signal<Tab>('workouts');
+  protected readonly limit = signal(PAGE);
+  /** Workouts deleted here, hidden without a reload. */
+  private readonly removed = signal<Set<number>>(new Set());
+
+  private readonly data = toSignal(
+    toObservable(this.limit).pipe(
+      switchMap((limit) =>
+        forkJoin({
+          workouts: this.history.recentWorkouts(limit),
+          exercises: this.exercisesApi.list(),
+        }).pipe(
+          map((d) => ({ ...d, failed: false })),
+          catchError(() =>
+            of({ workouts: [] as WorkoutSummary[], exercises: [] as Exercise[], failed: true }),
+          ),
+        ),
+      ),
+    ),
   );
 
-  /** Library exercises that appear in at least one finished workout, by name. */
+  protected readonly loaded = computed(() => this.data() !== undefined);
+  protected readonly failed = computed(() => this.data()?.failed ?? false);
+  protected readonly list = computed(() =>
+    (this.data()?.workouts ?? []).filter((w) => !this.removed().has(w.id)),
+  );
+  protected readonly months = computed(() => groupByMonth(this.list()));
+  protected readonly mayHaveMore = computed(
+    () => (this.data()?.workouts.length ?? 0) >= this.limit(),
+  );
+
+  /** Trained exercises with how often and when they were last done, most recent first. */
   protected readonly trained = computed(() => {
-    const d = this.data();
-    if (!d) return [];
-    const names = new Set(d.workouts.flatMap((w) => w.exercises));
-    return d.exercises.filter((e) => names.has(e.name));
+    const byName = new Map((this.data()?.exercises ?? []).map((e) => [e.name, e]));
+    const seen = new Map<string, { exercise: Exercise; sessions: number; last: string }>();
+    for (const w of this.list()) {
+      for (const name of w.exercises) {
+        const e = byName.get(name);
+        if (!e) continue;
+        const entry = seen.get(name);
+        if (entry) entry.sessions++;
+        else seen.set(name, { exercise: e, sessions: 1, last: w.startedAt });
+      }
+    }
+    return [...seen.values()];
   });
+
+  protected readonly detail = signal<Workout | null>(null);
+  protected readonly detailSummary = computed(() => {
+    const w = this.detail();
+    if (!w) return null;
+    const sets = w.exercises.flatMap((e) => e.sets);
+    return {
+      sets: sets.length,
+      volumeKg: sets.reduce((kg, s) => kg + s.weightKg * s.reps, 0),
+      duration: this.duration(w.startedAt, w.finishedAt),
+      exercises: w.exercises
+        .filter((e) => e.sets.length > 0)
+        .map((e) => ({
+          id: e.exerciseId,
+          name: e.name,
+          sets: describeSets(e.sets, this.settings.unitLabel(), (kg) => this.settings.display(kg)),
+        })),
+    };
+  });
+
+  protected open(w: WorkoutSummary): void {
+    this.workouts.get(w.id).subscribe((full) => this.detail.set(full));
+  }
+
+  protected async remove(): Promise<void> {
+    const w = this.detail();
+    if (!w) return;
+    const ok = await this.confirm.ask({
+      title: 'Delete this workout?',
+      message: 'Its sets are removed from your history, stats and records. This cannot be undone.',
+      confirmLabel: 'Delete workout',
+      danger: true,
+    });
+    if (!ok) return;
+    this.workouts.discard(w.id).subscribe(() => {
+      this.removed.update((set) => new Set(set).add(w.id));
+      this.detail.set(null);
+    });
+  }
+
+  protected more(): void {
+    this.limit.update((n) => n + PAGE);
+  }
+
+  protected day(iso: string): string {
+    return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+  }
+
+  protected longDate(iso: string): string {
+    return new Date(iso).toLocaleDateString(undefined, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+  }
+
+  protected shortDate(iso: string): string {
+    return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  }
 
   protected duration(start: string, end: string | null): string {
     return end ? formatDuration((Date.parse(end) - Date.parse(start)) / 1000) : '';
