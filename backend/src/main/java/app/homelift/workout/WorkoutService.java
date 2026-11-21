@@ -95,6 +95,7 @@ public class WorkoutService {
 		Workout workout = editable(workoutId);
 		Exercise exercise = this.exercises.get(exerciseId);
 		WorkoutExercise added = workout.addExercise(exercise, (targetSets != null) ? targetSets : DEFAULT_TARGET_SETS);
+		added.rest(exercise.getRestSeconds());
 		this.workouts.flush();
 		return added;
 	}

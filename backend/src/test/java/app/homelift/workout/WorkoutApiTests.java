@@ -74,6 +74,13 @@ class WorkoutApiTests {
 	}
 
 	@Test
+	void anAddedExerciseCarriesItsOwnRest() {
+		long workout = start(null);
+		addExercise(workout, "Bench Press");
+		assertThat(JsonPath.<Object>read(view(workout), "$.exercises[0].restSeconds")).isNull();
+	}
+
+	@Test
 	void loggingPastThePlanRaisesTheTarget() {
 		long workout = start(null);
 		long squat = addExerciseWithTarget(workout, "Back Squat", 1);

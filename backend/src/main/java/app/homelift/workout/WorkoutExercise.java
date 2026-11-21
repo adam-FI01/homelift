@@ -100,6 +100,10 @@ public class WorkoutExercise {
 		return this.autoProgress;
 	}
 
+	void rest(@Nullable Integer restSeconds) {
+		this.restSeconds = restSeconds;
+	}
+
 	void plan(int targetReps, int restSeconds, boolean autoProgress) {
 		this.targetReps = targetReps;
 		this.restSeconds = restSeconds;
