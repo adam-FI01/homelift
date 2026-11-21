@@ -124,12 +124,15 @@ docker build -t homelift .
 
 ```
 feature/* ──PR──► qa ──PR──► main ──► ghcr.io/adam-fi01/homelift:latest
+                                  └─ tag v1.2.3 ──► :1.2.3, :1.2 and a GitHub release
 ```
 
 - **`qa`** is the integration branch. Feature, fix and Dependabot PRs target `qa` and are squash-merged once CI passes.
 - **`main`** is the release branch. It only accepts a pull request from `qa`, which is enforced by the required `Source branch is qa` check, and that PR is merged with a merge commit so the two branches stay in sync.
 - Both branches are protected. Changes need a pull request with passing checks, and force pushes and deletion are blocked.
 - Pull requests run the frontend and backend tests plus a quick amd64 image build. The full amd64 + arm64 image is built and published **only from `main`**.
+- **Releasing** a version: bump the version in `backend/pom.xml` and `frontend/package.json`, move the `Unreleased` notes in [`CHANGELOG.md`](CHANGELOG.md) under the new version, merge `qa` into `main`, then tag that merge commit (`git tag v1.2.3 && git push origin v1.2.3`). The tag publishes `:1.2.3` and `:1.2` images and creates the GitHub release from the changelog. Tags on any commit not on `main` are refused.
+- To stay on a version, use `ghcr.io/adam-fi01/homelift:1.0.0` (or `:1.0` for patch updates) instead of `:latest`.
 
 ## Roadmap
 
