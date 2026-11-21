@@ -42,6 +42,7 @@ COPY --from=jar /app/snapshot-dependencies/ ./
 COPY --from=jar /app/application/ ./
 
 ENV HOMELIFT_DATA_DIR=/data \
+    LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs \
     JAVA_TOOL_OPTIONS="--enable-native-access=ALL-UNNAMED -XX:MaxRAMPercentage=75 -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss512k"
 
 USER homelift

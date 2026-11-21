@@ -1,0 +1,141 @@
+:host {
+  display: contents;
+}
+.sub {
+  font-size: 14px;
+  color: var(--sub);
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: -10px;
+}
+.head h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+.log {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--btn);
+  color: var(--on-btn);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 0 -20px;
+  padding: 0 20px;
+  scrollbar-width: none;
+}
+.chip {
+  flex: none;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+}
+.chip.on {
+  background: var(--btn);
+  color: var(--on-btn);
+  border-color: var(--btn);
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.big {
+  font-size: 44px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.unit {
+  font-size: 22px;
+  color: var(--sub);
+}
+
+.list {
+  padding: 0 8px 0 16px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+}
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+.when {
+  flex: 1;
+  font-size: 15px;
+}
+.val {
+  font-weight: 500;
+}
+.del {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: none;
+  color: var(--sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+}
+.empty p {
+  margin: 0;
+  color: var(--sub);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--sub);
+}
+.field input {
+  height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

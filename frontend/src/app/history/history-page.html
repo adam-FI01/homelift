@@ -1,0 +1,134 @@
+<header class="head">
+  <h1>History</h1>
+  <a class="pill" routerLink="/stats">Stats</a>
+</header>
+
+<div class="tabs" role="tablist" aria-label="History">
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'workouts'"
+    (click)="tab.set('workouts')"
+  >
+    Workouts
+  </button>
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'exercises'"
+    (click)="tab.set('exercises')"
+  >
+    Exercises
+  </button>
+</div>
+
+@if (!loaded()) {
+  <p class="sub">Loading…</p>
+} @else if (failed()) {
+  <p class="card sub">Couldn't load your history. Is the server running?</p>
+} @else if (list().length === 0) {
+  <section class="card empty">
+    <p>Finished workouts show up here.</p>
+    <a class="btn-primary" routerLink="/workout">Start a workout</a>
+  </section>
+} @else if (tab() === 'workouts') {
+  @for (m of months(); track m.key) {
+    <section class="month" [attr.aria-label]="m.title">
+      <div class="month-head">
+        <h2>{{ m.title }}</h2>
+        <span class="sub"
+          >{{ m.workouts.length }} {{ m.workouts.length === 1 ? 'workout' : 'workouts' }} ·
+          {{ m.volumeKg | weight: 0 }}</span
+        >
+      </div>
+      <div class="card list">
+        @for (w of m.workouts; track w.id) {
+          <button type="button" class="row" (click)="open(w)">
+            <span class="day">{{ day(w.startedAt) }}</span>
+            <span class="what">
+              <span class="name">{{ w.name ?? 'Workout' }}</span>
+              <span class="sub">{{ w.sets }} sets · {{ duration(w.startedAt, w.finishedAt) }}</span>
+            </span>
+            <span class="vol">{{ w.volumeKg | weight: 0 }}</span>
+          </button>
+        }
+      </div>
+    </section>
+  }
+  @if (mayHaveMore()) {
+    <button type="button" class="more" (click)="more()">Show older workouts</button>
+  }
+} @else {
+  <div class="card list">
+    @for (t of trained(); track t.exercise.id) {
+      <a class="row" [routerLink]="['/exercises', t.exercise.id]">
+        <span class="what">
+          <span class="name">{{ t.exercise.name }}</span>
+          <span class="sub"
+            >{{ t.sessions }} {{ t.sessions === 1 ? 'session' : 'sessions' }} · last
+            {{ shortDate(t.last) }}</span
+          >
+        </span>
+        <svg
+          aria-hidden="true"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </a>
+    }
+  </div>
+  <a class="more" routerLink="/exercises">All exercises</a>
+}
+
+<app-sheet [title]="detail()?.name ?? 'Workout'" [open]="!!detail()" (closed)="detail.set(null)">
+  @if (detail(); as w) {
+    @if (detailSummary(); as d) {
+      <p class="when">{{ longDate(w.startedAt) }}</p>
+      <dl class="totals">
+        <div>
+          <dt>Time</dt>
+          <dd>{{ d.duration }}</dd>
+        </div>
+        <div>
+          <dt>Sets</dt>
+          <dd>{{ d.sets }}</dd>
+        </div>
+        <div>
+          <dt>Volume</dt>
+          <dd>{{ d.volumeKg | weight: 0 }}</dd>
+        </div>
+      </dl>
+      <ul class="exercises">
+        @for (e of d.exercises; track $index) {
+          <li>
+            <a [routerLink]="['/exercises', e.id]" (click)="detail.set(null)">
+              <span class="name">{{ e.name }}</span>
+              <span class="sub">{{ e.sets }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+      <label class="notes">
+        <span>Notes</span>
+        <textarea
+          class="field"
+          rows="2"
+          maxlength="2000"
+          placeholder="How did it go?"
+          [value]="notesDraft()"
+          (input)="notesDraft.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      @if (notesDraft().trim() !== (w.notes ?? '')) {
+        <button type="button" class="btn-primary" (click)="saveNotes()">Save notes</button>
+      }
+      <button type="button" class="delete" (click)="remove()">Delete workout</button>
+    }
+  }
+</app-sheet>
