@@ -32,7 +32,15 @@ class HomeLiftApplicationTests {
 
 	@Test
 	void clientSideRoutesForwardToSpa() {
-		assertThat(this.mvc.get().uri("/workouts/42")).hasForwardedUrl("/index.html");
+		assertThat(this.mvc.get().uri("/workout")).hasForwardedUrl("/index.html");
+		assertThat(this.mvc.get().uri("/exercises/42/edit")).hasForwardedUrl("/index.html");
+	}
+
+	@Test
+	void filesInFoldersAreNotForwarded() {
+		assertThat(this.mvc.get().uri("/media/inter.woff2").exchange().getResponse().getForwardedUrl()).isNull();
+		assertThat(this.mvc.get().uri("/icons/icon-192.png").exchange().getResponse().getForwardedUrl()).isNull();
+		assertThat(this.mvc.get().uri("/api/nothing").exchange().getResponse().getForwardedUrl()).isNull();
 	}
 
 }

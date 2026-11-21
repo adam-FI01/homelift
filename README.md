@@ -10,6 +10,7 @@ A self-hosted workout tracker made for a home server. HomeLift ships as one smal
 
 ## Features
 
+- **Install it like an app.** Add HomeLift to your home screen; it opens full screen, loads without a connection, and sets logged offline are kept on the phone and sent when you're back.
 - **Log sets with one tap.** Each set is prefilled from the last one, or from last time, with big +/− controls and a rest timer that survives a reload.
 - **Warm-ups, supersets and notes.** Tag warm-up sets (left out of volume and records), pair exercises into supersets that rest after the round, and keep notes on workouts and set-up cues on exercises.
 - **Routines.** Save plans like "Push A" with sets, reps and rest, and start them with one tap. Optional auto progression adds 2.5 kg once every set hits its reps.

@@ -1,4 +1,14 @@
-import { Component, DestroyRef, computed, inject, linkedSignal, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Observable, of, switchMap } from 'rxjs';
 import { Exercise } from '../exercises/exercise';
@@ -9,6 +19,7 @@ import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from './exercise-picker';
+import { OfflineQueue, withPending } from './offline-queue.service';
 import { PlateCalculator } from './plate-calculator';
 import { RestTimer } from './rest-timer.service';
 import { RestTimerCard } from './rest-timer';
@@ -43,7 +54,15 @@ export class WorkoutPage {
   protected readonly unit = this.settings.unitLabel;
   protected readonly weightStep = this.settings.weightStep;
 
-  protected readonly workout = signal<Workout | null | undefined>(undefined);
+  private readonly queue = inject(OfflineQueue);
+  /** The workout as the server last sent it. */
+  private readonly server = signal<Workout | null | undefined>(undefined);
+  /** What the page shows: the server's workout plus any sets waiting to sync. */
+  protected readonly workout = computed(() => withPending(this.server(), this.queue.items()));
+  protected readonly waiting = computed(() => {
+    const w = this.server();
+    return w ? this.queue.items().filter((q) => q.workoutId === w.id).length : 0;
+  });
   protected readonly index = linkedSignal<Workout | null | undefined, number>({
     source: this.workout,
     computation: (w, prev) =>
@@ -142,15 +161,19 @@ export class WorkoutPage {
   });
 
   constructor() {
+    // When queued sets reach the server, fetch the real workout again.
+    effect(() => {
+      if (this.queue.synced() > 0) untracked(() => this.reload());
+    });
     const tick = setInterval(() => this.now.set(Date.now()), 1000);
     inject(DestroyRef).onDestroy(() => clearInterval(tick));
     this.api.current().subscribe({
       next: (w) => {
-        this.workout.set(w);
+        this.server.set(w);
         if (w && w.exercises.length === 0) this.picking.set(true);
       },
       error: (err: unknown) => {
-        this.workout.set(null);
+        this.server.set(null);
         this.error.set(problemMessage(err));
       },
     });
@@ -158,7 +181,7 @@ export class WorkoutPage {
 
   protected start(): void {
     this.run(this.api.start(), (w) => {
-      this.workout.set(w);
+      this.server.set(w);
       this.picking.set(true);
     });
   }
@@ -167,7 +190,7 @@ export class WorkoutPage {
     const w = this.workout();
     if (!w) return;
     this.run(this.api.addExercise(w.id, exercise.id), (updated) => {
-      this.workout.set(updated);
+      this.server.set(updated);
       this.index.set(updated.exercises.length - 1);
       this.picking.set(false);
     });
@@ -186,24 +209,40 @@ export class WorkoutPage {
     if (!w || !ex) return;
     const warmup = this.warmupNext();
     const from = this.index();
+    const weightKg = this.settings.toKg(this.weight());
+    const reps = this.reps();
     this.rest.prime();
-    this.run(
-      this.api.logSet(w.id, ex.id, this.settings.toKg(this.weight()), this.reps(), warmup),
-      () => {
-        this.reload((updated) => {
-          // Warm-ups need no rest or move; working sets follow the superset and the plan.
-          if (warmup) return;
-          const next = afterLog(updated, from);
-          if (next.rest && this.settings.settings().autoStartRest) {
-            this.rest.start(ex.restSeconds ?? undefined);
-          }
-          this.index.set(next.index);
-        });
+    // Warm-ups need no rest or move; working sets follow the superset and the plan.
+    const moveOn = (updated: Workout) => {
+      if (warmup) return;
+      const next = afterLog(updated, from);
+      if (next.rest && this.settings.settings().autoStartRest) {
+        this.rest.start(ex.restSeconds ?? undefined);
+      }
+      this.index.set(next.index);
+    };
+    this.busy.set(true);
+    this.error.set(null);
+    this.api.logSet(w.id, ex.id, weightKg, reps, warmup).subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.reload(() => moveOn(this.workout()!));
       },
-    );
+      error: (err: unknown) => {
+        this.busy.set(false);
+        if (err instanceof HttpErrorResponse && err.status === 0) {
+          // Offline: keep the set on this device, show it as pending and carry on.
+          this.queue.add({ workoutId: w.id, workoutExerciseId: ex.id, weightKg, reps, warmup });
+          moveOn(this.workout()!);
+        } else {
+          this.error.set(problemMessage(err));
+        }
+      },
+    });
   }
 
   protected editSet(set: LoggedSet): void {
+    if (set.pending) return; // not on the server yet
     this.editWeight.set(this.shown(set.weightKg));
     this.editReps.set(set.reps);
     this.editWarmup.set(set.warmup);
@@ -254,7 +293,7 @@ export class WorkoutPage {
       confirmLabel: 'Remove exercise',
       danger: true,
     });
-    if (ok) this.run(this.api.removeExercise(w.id, ex.id), (updated) => this.workout.set(updated));
+    if (ok) this.run(this.api.removeExercise(w.id, ex.id), (updated) => this.server.set(updated));
   }
 
   /** Opens the finish sheet, or offers to discard when nothing was logged. */
@@ -323,7 +362,7 @@ export class WorkoutPage {
     const w = this.workout();
     if (!w) return;
     this.api.get(w.id).subscribe((updated) => {
-      this.workout.set(updated);
+      this.server.set(updated);
       then?.(updated);
     });
   }

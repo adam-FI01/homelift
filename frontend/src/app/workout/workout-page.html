@@ -36,6 +36,13 @@
       <button type="button" class="finish" [disabled]="busy()" (click)="finish()">Finish</button>
     </header>
 
+    @if (waiting() > 0) {
+      <p class="offline" role="status">
+        Offline · {{ waiting() }} {{ waiting() === 1 ? 'set' : 'sets' }} saved on this phone,
+        sending when you're back online
+      </p>
+    }
+
     <div
       class="progress"
       role="progressbar"
@@ -103,7 +110,11 @@
               <button
                 type="button"
                 class="check"
-                [attr.aria-label]="(row.warmup ? 'Warm-up' : 'Set ' + row.label) + ' logged. Edit'"
+                [class.pending]="s.pending"
+                [attr.aria-label]="
+                  (row.warmup ? 'Warm-up' : 'Set ' + row.label) +
+                  (s.pending ? ' waiting to sync' : ' logged. Edit')
+                "
                 (click)="editSet(s)"
               >
                 <svg

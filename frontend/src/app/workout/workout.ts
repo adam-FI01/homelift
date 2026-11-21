@@ -7,6 +7,8 @@ export interface LoggedSet {
   reps: number;
   /** Warm-ups are kept but left out of volume, records and "last time". */
   warmup: boolean;
+  /** Logged while offline and not yet on the server. */
+  pending?: boolean;
 }
 
 export interface PreviousSet {

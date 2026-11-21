@@ -329,3 +329,15 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.offline {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--sub);
+  font-size: 13px;
+}
+.check.pending {
+  background: var(--soft);
+  color: var(--sub);
+}

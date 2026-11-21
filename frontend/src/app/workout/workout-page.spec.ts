@@ -180,4 +180,21 @@ describe('WorkoutPage', () => {
     expect([...el.querySelectorAll('.grid.warm')]).toHaveLength(1);
     expect(el.textContent).toContain('Log warm-up');
   });
+
+  it('keeps logging while offline and shows the set as pending', async () => {
+    localStorage.removeItem('homelift.offline.sets');
+    const { fixture, el, button, http } = await setup(WORKOUT);
+    button('Log set 2').click();
+    http
+      .expectOne({ method: 'POST', url: '/api/workouts/7/exercises/11/sets' })
+      .error(new ProgressEvent('error'));
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Offline · 1 set saved on this phone');
+    // Two of two planned sets are done (one pending), so it moves on.
+    expect(el.querySelector('h1')?.textContent).toBe('Overhead Press');
+    button('Bench Press').click();
+    await fixture.whenStable();
+    expect(el.querySelector('[aria-label="Set 2 waiting to sync"]')).not.toBeNull();
+    localStorage.removeItem('homelift.offline.sets');
+  });
 });

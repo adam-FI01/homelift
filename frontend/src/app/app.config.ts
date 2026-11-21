@@ -2,10 +2,12 @@ import {
   ApplicationConfig,
   ErrorHandler,
   inject,
+  isDevMode,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideServiceWorker } from '@angular/service-worker';
 import {
   PreloadAllModules,
   provideRouter,
@@ -26,5 +28,11 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([lockedInterceptor])),
     // Fetch settings in the background; the cached copy is used until they arrive.
     provideAppInitializer(() => inject(SettingsService).load()),
+    // Installable app with an offline cache; off in dev so code changes show straight away.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      // The app has always-running timers, so wait a few seconds rather than for "stable".
+      registrationStrategy: 'registerWithDelay:3000',
+    }),
   ],
 };
