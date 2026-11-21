@@ -159,9 +159,9 @@
     Add exercise
   </button>
 
-  <app-sheet title="Add exercise" [open]="picking()" (closed)="picking.set(false)">
+  <app-sheet title="Add exercises" [open]="picking()" (closed)="picking.set(false)">
     @if (picking()) {
-      <app-exercise-picker (picked)="add($event)" />
+      <app-exercise-picker [multiple]="true" (pickedMany)="addMany($event)" />
     }
   </app-sheet>
 

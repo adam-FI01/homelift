@@ -74,27 +74,43 @@ describe('RoutineEditor', () => {
 
   it('builds a new routine from the picker', async () => {
     const { fixture, http, el } = await setup();
-    http
-      .expectOne('/api/exercises?includeArchived=true')
-      .flush([
-        { id: 17, name: 'Back Squat', muscleGroup: 'LEGS', equipment: 'BARBELL', archived: false },
-      ]);
+    http.expectOne('/api/exercises?includeArchived=true').flush([
+      { id: 17, name: 'Back Squat', muscleGroup: 'LEGS', equipment: 'BARBELL', archived: false },
+      { id: 22, name: 'Leg Curl', muscleGroup: 'LEGS', equipment: 'MACHINE', archived: false },
+      { id: 21, name: 'Leg Press', muscleGroup: 'LEGS', equipment: 'MACHINE', archived: false },
+    ]);
     await fixture.whenStable();
     const save = () =>
       [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Save')!;
     expect(save().disabled).toBe(true);
 
-    [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Back Squat'))!.click();
+    const pick = (name: string) =>
+      [...el.querySelectorAll('[role=checkbox]')].find((b) =>
+        b.textContent?.includes(name),
+      ) as HTMLButtonElement;
+    pick('Back Squat').click();
+    await fixture.whenStable();
+    pick('Leg Curl').click();
+    await fixture.whenStable();
+    pick('Leg Press').click();
+    await fixture.whenStable();
+    pick('Leg Press').click(); // untick
+    await fixture.whenStable();
+    expect(pick('Back Squat').getAttribute('aria-checked')).toBe('true');
+    [...el.querySelectorAll('button')]
+      .find((b) => b.textContent?.trim() === 'Add 2 exercises')!
+      .click();
     const name = el.querySelector('input') as HTMLInputElement;
     name.value = 'Legs';
     name.dispatchEvent(new Event('input'));
     await fixture.whenStable();
-    expect(el.textContent).toContain('3 × 8 · 2:00');
+    expect(el.textContent).toContain('2 exercises · 6 sets');
 
     save().click();
     const req = http.expectOne({ method: 'POST', url: '/api/routines' });
     expect(req.request.body.exercises).toEqual([
       { exerciseId: 17, sets: 3, reps: 8, restSeconds: 120, autoProgress: false },
+      { exerciseId: 22, sets: 3, reps: 8, restSeconds: 120, autoProgress: false },
     ]);
   });
 });

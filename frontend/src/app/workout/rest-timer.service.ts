@@ -4,7 +4,7 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 const END_KEY = 'homelift.rest.endsAt';
 const TOTAL_KEY = 'homelift.rest.total';
 const SOUND_KEY = 'homelift.rest.sound';
-export const DEFAULT_REST_SECONDS = 150;
+export const DEFAULT_REST_SECONDS = 120;
 /** How long "Rest over" stays on screen after the countdown ends. */
 const DONE_MS = 8000;
 

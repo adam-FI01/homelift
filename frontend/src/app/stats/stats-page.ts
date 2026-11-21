@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import { LineChart } from '../shared/line-chart';
 import { BarChart } from './bar-chart';
 import {
   PERIODS,
@@ -25,7 +26,7 @@ type Load = { status: 'loading' } | { status: 'error' } | { status: 'ready'; sta
 /** A Wrapped-style recap of a day, week, month, quarter or year, told as a stack of cards. */
 @Component({
   selector: 'app-stats-page',
-  imports: [RouterLink, DecimalPipe, BarChart],
+  imports: [RouterLink, DecimalPipe, BarChart, LineChart],
   templateUrl: './stats-page.html',
   styleUrl: './stats-page.scss',
 })
@@ -82,6 +83,25 @@ export class StatsPage {
       label: this.bucketLabel(s.period, b.start),
       value: b.volumeKg,
     }));
+  });
+
+  /** Volume added up bucket by bucket, up to today, for the running total line. */
+  protected readonly runningTotal = computed(() => {
+    const s = this.stats();
+    if (!s || s.period === 'DAY') return [];
+    const now = Date.now();
+    let total = 0;
+    return s.buckets
+      .filter((b) => localDate(b.start).getTime() <= now)
+      .map((b) => ({ x: localDate(b.start).getTime(), y: (total += b.volumeKg) }));
+  });
+
+  protected readonly runningLabel = computed(() => {
+    const pts = this.runningTotal();
+    const last = pts.at(-1);
+    return last
+      ? `Running total of volume this ${this.noun()}, reaching ${Math.round(last.y)} kg`
+      : 'No volume logged';
   });
 
   protected readonly chartLabel = computed(() => {

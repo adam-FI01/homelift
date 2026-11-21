@@ -1,10 +1,13 @@
-import { Component, computed, inject, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of } from 'rxjs';
 import { Exercise, label } from '../exercises/exercise';
 import { ExerciseService } from '../exercises/exercise.service';
 
-/** A searchable list of active exercises; emits the one picked. Shown inside a sheet. */
+/**
+ * A searchable list of active exercises, shown inside a sheet. Tapping one picks it, or with
+ * `multiple` set, ticks it; the button at the bottom then adds all ticked ones in tap order.
+ */
 @Component({
   selector: 'app-exercise-picker',
   template: `
@@ -17,41 +20,66 @@ import { ExerciseService } from '../exercises/exercise.service';
         [value]="query()"
         (input)="query.set($any($event.target).value)"
       />
-      <ul>
+      <ul [attr.aria-multiselectable]="multiple() || null">
         @for (e of matches(); track e.id) {
           <li>
-            <button type="button" class="row" (click)="picked.emit(e)">
-              <span>{{ e.name }}</span>
-              <span class="sub">{{ label(e.muscleGroup) }}</span>
-            </button>
+            @if (multiple()) {
+              <button
+                type="button"
+                class="row"
+                role="checkbox"
+                [attr.aria-checked]="isChosen(e)"
+                (click)="toggle(e)"
+              >
+                <span class="box" [class.on]="isChosen(e)" aria-hidden="true">
+                  @if (isChosen(e)) {
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="3"
+                    >
+                      <path d="M5 12l5 5L20 7" />
+                    </svg>
+                  }
+                </span>
+                <span class="name">{{ e.name }}</span>
+                <span class="sub">{{ label(e.muscleGroup) }}</span>
+              </button>
+            } @else {
+              <button type="button" class="row" (click)="picked.emit(e)">
+                <span class="name">{{ e.name }}</span>
+                <span class="sub">{{ label(e.muscleGroup) }}</span>
+              </button>
+            }
           </li>
         } @empty {
           <li class="sub empty">{{ exercises() ? 'No exercises match.' : 'Loading…' }}</li>
         }
       </ul>
+      @if (multiple()) {
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="chosen().length === 0"
+          (click)="pickedMany.emit(chosen())"
+        >
+          {{
+            chosen().length === 0
+              ? 'Select exercises'
+              : 'Add ' + chosen().length + (chosen().length === 1 ? ' exercise' : ' exercises')
+          }}
+        </button>
+      }
     </div>
   `,
   styles: `
-    .card {
+    .picker {
       display: flex;
       flex-direction: column;
       gap: 12px;
-    }
-    .head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    h2 {
-      margin: 0;
-      font-size: 17px;
-      font-weight: 600;
-    }
-    .close {
-      background: none;
-      border: 0;
-      color: var(--sub);
-      padding: 8px 0 8px 12px;
     }
     input {
       height: var(--tap);
@@ -64,7 +92,7 @@ import { ExerciseService } from '../exercises/exercise.service';
     }
     ul {
       list-style: none;
-      margin: 0 -18px -8px;
+      margin: 0 -20px;
       padding: 0;
       max-height: 50dvh;
       overflow-y: auto;
@@ -75,15 +103,34 @@ import { ExerciseService } from '../exercises/exercise.service';
     .row {
       width: 100%;
       min-height: var(--tap);
-      padding: 10px 18px;
+      padding: 10px 20px;
       border: 0;
       background: none;
       color: var(--ink);
       display: flex;
-      justify-content: space-between;
+      align-items: center;
       gap: 12px;
       text-align: left;
       font-weight: 500;
+    }
+    .name {
+      flex: 1;
+    }
+    .box {
+      flex: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1.5px solid var(--sub);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+    .box.on {
+      background: var(--btn);
+      border-color: var(--btn);
+      color: var(--on-btn);
     }
     .sub {
       color: var(--sub);
@@ -91,16 +138,23 @@ import { ExerciseService } from '../exercises/exercise.service';
       font-weight: 400;
     }
     .empty {
-      padding: 16px 18px;
+      padding: 16px 20px;
       text-align: center;
+    }
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: default;
     }
   `,
 })
 export class ExercisePicker {
+  readonly multiple = input(false);
   readonly picked = output<Exercise>();
+  readonly pickedMany = output<Exercise[]>();
 
   protected readonly label = label;
   protected readonly query = signal('');
+  protected readonly chosen = signal<Exercise[]>([]);
   protected readonly exercises = toSignal(
     inject(ExerciseService)
       .list()
@@ -113,4 +167,14 @@ export class ExercisePicker {
     const q = this.query().trim().toLowerCase();
     return (this.exercises() ?? []).filter((e) => !q || e.name.toLowerCase().includes(q));
   });
+
+  protected isChosen(e: Exercise): boolean {
+    return this.chosen().some((c) => c.id === e.id);
+  }
+
+  protected toggle(e: Exercise): void {
+    this.chosen.update((list) =>
+      this.isChosen(e) ? list.filter((c) => c.id !== e.id) : [...list, e],
+    );
+  }
 }

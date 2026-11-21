@@ -73,9 +73,12 @@ export class RoutineEditor implements OnInit {
     });
   }
 
-  protected add(e: Exercise): void {
-    this.exercises.update((list) => [...list, { exerciseId: e.id, name: e.name, ...DEFAULT_PLAN }]);
-    this.open.set(this.exercises().length - 1);
+  protected addMany(picked: Exercise[]): void {
+    this.exercises.update((list) => [
+      ...list,
+      ...picked.map((e) => ({ exerciseId: e.id, name: e.name, ...DEFAULT_PLAN })),
+    ]);
+    this.open.set(picked.length === 1 ? this.exercises().length - 1 : null);
     this.picking.set(false);
   }
 

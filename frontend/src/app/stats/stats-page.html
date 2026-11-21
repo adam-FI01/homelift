@@ -125,6 +125,16 @@
       </section>
     }
 
+    @if (runningTotal().length > 1) {
+      <section class="card" aria-label="Running total">
+        <span class="kicker">Running total</span>
+        <span class="headline"
+          >{{ s.totals.volumeKg | number: '1.0-0' }} kg <span class="unit">so far</span></span
+        >
+        <app-line-chart [points]="runningTotal()" [label]="runningLabel()" unit="kg" />
+      </section>
+    }
+
     @if (s.topExercise; as top) {
       <a class="card story" [routerLink]="['/exercises', top.exerciseId]">
         <span class="kicker">Your most-trained lift</span>

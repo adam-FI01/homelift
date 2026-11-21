@@ -79,7 +79,7 @@ describe('ExerciseProgress', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.badge').length).toBe(1);
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('svg[role=img]')
+        .querySelector('app-line-chart [role=group]')
         ?.getAttribute('aria-label'),
     ).toContain('3 sessions');
   });
