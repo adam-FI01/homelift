@@ -80,6 +80,8 @@ Design notes:
 ```
 backend/    Spring Boot application (Maven)
 frontend/   Angular application
+e2e/        Playwright end-to-end tests
+postman/    Postman collection for the API
 Dockerfile  Multi-stage, multi-arch image build
 compose.yaml
 .github/    CI, image publishing, Dependabot
@@ -135,6 +137,15 @@ cd frontend && npx ng test --watch=false
 cd backend && ./mvnw verify          # also builds the UI into the jar
 docker build -t homelift .
 ```
+
+End-to-end tests drive the packaged app in Chromium at phone size. They start the jar on port 18081 with an empty database, so build it first:
+
+```bash
+cd backend && ./mvnw package -DskipTests
+cd e2e && npm ci && npx playwright install chromium && npx playwright test
+```
+
+CI runs them only on pull requests into `main`.
 
 ## API
 
