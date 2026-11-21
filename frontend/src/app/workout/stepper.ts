@@ -51,7 +51,7 @@ import { Component, input, model } from '@angular/core';
       display: flex;
       flex-direction: column;
       gap: 8px;
-      padding: 12px;
+      padding: 12px 8px;
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--radius-card);
@@ -64,13 +64,13 @@ import { Component, input, model } from '@angular/core';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 4px;
+      gap: 2px;
     }
     button {
       flex: none;
-      width: 44px;
+      width: 38px;
       height: 44px;
-      border-radius: 22px;
+      border-radius: 19px;
       border: 0;
       background: var(--soft);
       color: var(--ink);
@@ -90,9 +90,10 @@ import { Component, input, model } from '@angular/core';
       color: var(--ink);
       text-align: center;
       font: inherit;
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 500;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
+      padding: 0;
     }
   `,
 })

@@ -3,6 +3,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import { SettingsService } from '../settings/settings.service';
+import { WeightPipe } from '../settings/weight.pipe';
 import { LineChart } from '../shared/line-chart';
 import { BarChart } from './bar-chart';
 import {
@@ -26,12 +28,14 @@ type Load = { status: 'loading' } | { status: 'error' } | { status: 'ready'; sta
 /** A Wrapped-style recap of a day, week, month, quarter or year, told as a stack of cards. */
 @Component({
   selector: 'app-stats-page',
-  imports: [RouterLink, DecimalPipe, BarChart, LineChart],
+  imports: [RouterLink, DecimalPipe, BarChart, LineChart, WeightPipe],
   templateUrl: './stats-page.html',
   styleUrl: './stats-page.scss',
 })
 export class StatsPage {
   private readonly api = inject(StatsService);
+  private readonly settings = inject(SettingsService);
+  protected readonly unit = this.settings.unitLabel;
 
   protected readonly periods = PERIODS;
   protected readonly period = signal<Period>('WEEK');
@@ -93,14 +97,17 @@ export class StatsPage {
     let total = 0;
     return s.buckets
       .filter((b) => localDate(b.start).getTime() <= now)
-      .map((b) => ({ x: localDate(b.start).getTime(), y: (total += b.volumeKg) }));
+      .map((b) => ({
+        x: localDate(b.start).getTime(),
+        y: this.settings.display((total += b.volumeKg)),
+      }));
   });
 
   protected readonly runningLabel = computed(() => {
     const pts = this.runningTotal();
     const last = pts.at(-1);
     return last
-      ? `Running total of volume this ${this.noun()}, reaching ${Math.round(last.y)} kg`
+      ? `Running total of volume this ${this.noun()}, reaching ${Math.round(last.y)} ${this.unit()}`
       : 'No volume logged';
   });
 
@@ -109,7 +116,7 @@ export class StatsPage {
     if (!s) return '';
     const best = [...s.buckets].sort((a, b) => b.volumeKg - a.volumeKg)[0];
     return best && best.volumeKg > 0
-      ? `Volume per ${s.period === 'YEAR' ? 'month' : s.period === 'QUARTER' ? 'week' : 'day'}; the biggest was ${this.bucketLabel(s.period, best.start)} with ${Math.round(best.volumeKg)} kg`
+      ? `Volume per ${s.period === 'YEAR' ? 'month' : s.period === 'QUARTER' ? 'week' : 'day'}; the biggest was ${this.bucketLabel(s.period, best.start)} with ${this.settings.format(best.volumeKg, 0)}`
       : 'No volume logged';
   });
 

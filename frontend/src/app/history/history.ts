@@ -70,12 +70,20 @@ export function recordSessions(sessions: Session[]): Set<number> {
 }
 
 /** "80 kg · 5, 5, 4" when the weight is the same, otherwise "80×5, 82.5×3". */
-export function describeSets(sets: HistorySet[]): string {
+/**
+ * "80 kg · 5, 5, 4" when the weight is the same, otherwise "80×5, 82.5×3". Pass the unit label
+ * and a kg converter to show pounds.
+ */
+export function describeSets(
+  sets: HistorySet[],
+  unit = 'kg',
+  convert = (kg: number) => kg,
+): string {
   if (sets.length === 0) return '';
   const weights = new Set(sets.map((s) => s.weightKg));
   if (weights.size === 1)
-    return `${kg(sets[0].weightKg)} kg · ${sets.map((s) => s.reps).join(', ')}`;
-  return sets.map((s) => `${kg(s.weightKg)}×${s.reps}`).join(', ');
+    return `${kg(convert(sets[0].weightKg))} ${unit} · ${sets.map((s) => s.reps).join(', ')}`;
+  return sets.map((s) => `${kg(convert(s.weightKg))}×${s.reps}`).join(', ');
 }
 
 export function shortDate(iso: string): string {

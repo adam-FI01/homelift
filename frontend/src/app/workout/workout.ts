@@ -46,14 +46,13 @@ export const WEIGHT_STEP_KG = 2.5;
  * set from last time (plus a step when auto progression earned it), otherwise a sensible
  * starting point for the equipment.
  */
-export function nextSetDefaults(exercise: WorkoutExercise): PreviousSet {
+export function nextSetDefaults(exercise: WorkoutExercise, stepKg = WEIGHT_STEP_KG): PreviousSet {
   const today = exercise.sets.at(-1);
   if (today) return { weightKg: today.weightKg, reps: today.reps };
   const target = exercise.targetReps;
   const previous = exercise.lastTime[0];
   if (previous) {
-    if (earnedProgression(exercise))
-      return { weightKg: previous.weightKg + WEIGHT_STEP_KG, reps: target! };
+    if (earnedProgression(exercise)) return { weightKg: previous.weightKg + stepKg, reps: target! };
     return { weightKg: previous.weightKg, reps: target ?? previous.reps };
   }
   return { weightKg: startingWeight(exercise.equipment), reps: target ?? 8 };

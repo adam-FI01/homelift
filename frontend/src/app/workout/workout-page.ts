@@ -4,27 +4,21 @@ import { Observable } from 'rxjs';
 import { Exercise } from '../exercises/exercise';
 import { problemMessage } from '../exercises/exercise.service';
 import { describeSets } from '../history/history';
+import { SettingsService } from '../settings/settings.service';
+import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from './exercise-picker';
 import { RestTimer } from './rest-timer.service';
 import { RestTimerCard } from './rest-timer';
 import { Stepper } from './stepper';
-import {
-  LoggedSet,
-  WEIGHT_STEP_KG,
-  Workout,
-  earnedProgression,
-  formatDuration,
-  formatKg,
-  nextSetDefaults,
-} from './workout';
+import { LoggedSet, Workout, earnedProgression, formatDuration, nextSetDefaults } from './workout';
 import { WorkoutService } from './workout.service';
 
 /** The workout in progress: pick an exercise, log sets with one tap, rest between them. */
 @Component({
   selector: 'app-workout-page',
-  imports: [RouterLink, Stepper, RestTimerCard, ExercisePicker, Sheet],
+  imports: [RouterLink, Stepper, RestTimerCard, ExercisePicker, Sheet, WeightPipe],
   templateUrl: './workout-page.html',
   styleUrl: './workout-page.scss',
 })
@@ -33,9 +27,10 @@ export class WorkoutPage {
   private readonly router = inject(Router);
   private readonly rest = inject(RestTimer);
   private readonly confirm = inject(ConfirmService);
+  protected readonly settings = inject(SettingsService);
 
-  protected readonly formatKg = formatKg;
-  protected readonly weightStep = WEIGHT_STEP_KG;
+  protected readonly unit = this.settings.unitLabel;
+  protected readonly weightStep = this.settings.weightStep;
 
   protected readonly workout = signal<Workout | null | undefined>(undefined);
   protected readonly index = linkedSignal<Workout | null | undefined, number>({
@@ -57,11 +52,11 @@ export class WorkoutPage {
   /** Weight and reps for the next set, refilled whenever the exercise or its sets change. */
   protected readonly weight = linkedSignal(() => {
     const ex = this.current();
-    return ex ? nextSetDefaults(ex).weightKg : 0;
+    return ex ? this.shown(nextSetDefaults(ex, this.settings.weightStepKg()).weightKg) : 0;
   });
   protected readonly reps = linkedSignal(() => {
     const ex = this.current();
-    return ex ? nextSetDefaults(ex).reps : 0;
+    return ex ? nextSetDefaults(ex, this.settings.weightStepKg()).reps : 0;
   });
 
   protected readonly nextSetNumber = computed(() => (this.current()?.sets.length ?? 0) + 1);
@@ -141,8 +136,8 @@ export class WorkoutPage {
     if (!w || !ex) return;
     const finishesExercise = ex.sets.length + 1 >= ex.targetSets;
     this.rest.prime();
-    this.run(this.api.logSet(w.id, ex.id, this.weight(), this.reps()), () => {
-      this.rest.start(ex.restSeconds ?? undefined);
+    this.run(this.api.logSet(w.id, ex.id, this.settings.toKg(this.weight()), this.reps()), () => {
+      if (this.settings.settings().autoStartRest) this.rest.start(ex.restSeconds ?? undefined);
       this.reload(() => {
         // Move on once the planned sets are done, if there is a next exercise.
         if (finishesExercise && this.index() < (this.workout()?.exercises.length ?? 0) - 1) {
@@ -153,7 +148,7 @@ export class WorkoutPage {
   }
 
   protected editSet(set: LoggedSet): void {
-    this.editWeight.set(set.weightKg);
+    this.editWeight.set(this.shown(set.weightKg));
     this.editReps.set(set.reps);
     this.editing.set({ set });
   }
@@ -163,10 +158,19 @@ export class WorkoutPage {
     const ex = this.current();
     const e = this.editing();
     if (!w || !ex || !e) return;
-    this.run(this.api.updateSet(w.id, ex.id, e.set.id, this.editWeight(), this.editReps()), () => {
-      this.editing.set(null);
-      this.reload();
-    });
+    this.run(
+      this.api.updateSet(
+        w.id,
+        ex.id,
+        e.set.id,
+        this.settings.toKg(this.editWeight()),
+        this.editReps(),
+      ),
+      () => {
+        this.editing.set(null);
+        this.reload();
+      },
+    );
   }
 
   protected deleteSet(): void {
@@ -239,9 +243,19 @@ export class WorkoutPage {
     const plan = ex.targetReps ? `Target ${ex.targetSets} × ${ex.targetReps}` : null;
     if (ex.lastTime.length === 0) return plan ?? 'First time doing this one';
     const last =
-      'last time ' + describeSets(ex.lastTime.map((s, i) => ({ ...s, setNumber: i + 1 })));
-    const bump = earnedProgression(ex) ? ` · +${formatKg(WEIGHT_STEP_KG)} kg today` : '';
+      'last time ' +
+      describeSets(
+        ex.lastTime.map((s, i) => ({ ...s, setNumber: i + 1 })),
+        this.unit(),
+        (kg) => this.settings.display(kg),
+      );
+    const bump = earnedProgression(ex) ? ` · +${this.weightStep()} ${this.unit()} today` : '';
     return plan ? `${plan} · ${last}${bump}` : last.charAt(0).toUpperCase() + last.slice(1);
+  }
+
+  /** A stored kg weight in the chosen unit, to one decimal, for the steppers. */
+  private shown(kg: number): number {
+    return Math.round(this.settings.display(kg) * 10) / 10;
   }
 
   private reload(then?: () => void): void {

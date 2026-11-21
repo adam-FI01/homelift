@@ -19,20 +19,29 @@
   --tap: 44px;
 }
 
+@mixin dark-tokens {
+  color-scheme: dark;
+  --bg: #0b0b0c;
+  --surface: #161618;
+  --ink: #f2f2f2;
+  --sub: #9a9a9e;
+  --line: #26262a;
+  --soft: #232326;
+  --btn: #f2f2f2;
+  --on-btn: #111111;
+  --pos: #3dd68c;
+  --neg: #ff7a70;
+}
+
+// Dark follows the system unless Settings picks a theme (data-theme on <html>).
 @media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --bg: #0b0b0c;
-    --surface: #161618;
-    --ink: #f2f2f2;
-    --sub: #9a9a9e;
-    --line: #26262a;
-    --soft: #232326;
-    --btn: #f2f2f2;
-    --on-btn: #111111;
-    --pos: #3dd68c;
-    --neg: #ff7a70;
+  :root:not([data-theme='light']) {
+    @include dark-tokens;
   }
+}
+
+:root[data-theme='dark'] {
+  @include dark-tokens;
 }
 
 *, *::before, *::after { box-sizing: border-box; }

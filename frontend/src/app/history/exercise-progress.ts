@@ -1,9 +1,10 @@
 import { Component, computed, inject, input, numberAttribute, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ExerciseService } from '../exercises/exercise.service';
+import { SettingsService } from '../settings/settings.service';
+import { WeightPipe } from '../settings/weight.pipe';
 import { LineChart } from '../shared/line-chart';
 import { RANGES, Range, describeSets, rangeStart, recordSessions, shortDate } from './history';
 import { HistoryService } from './history.service';
@@ -11,13 +12,16 @@ import { HistoryService } from './history.service';
 /** One exercise's progress: estimated 1RM over time, records, and past sessions. */
 @Component({
   selector: 'app-exercise-progress',
-  imports: [RouterLink, LineChart, DecimalPipe],
+  imports: [RouterLink, LineChart, WeightPipe],
   templateUrl: './exercise-progress.html',
   styleUrl: './exercise-progress.scss',
 })
 export class ExerciseProgress {
   private readonly exercises = inject(ExerciseService);
   private readonly history = inject(HistoryService);
+  private readonly settings = inject(SettingsService);
+  protected readonly unit = this.settings.unitLabel;
+  protected readonly display = (kg: number) => this.settings.display(kg);
 
   readonly id = input.required({ transform: numberAttribute });
 
@@ -45,7 +49,10 @@ export class ExerciseProgress {
   });
 
   protected readonly points = computed(() =>
-    this.inRange().map((s) => ({ x: Date.parse(s.date), y: s.bestOneRepMax })),
+    this.inRange().map((s) => ({
+      x: Date.parse(s.date),
+      y: this.settings.display(s.bestOneRepMax),
+    })),
   );
 
   /** Latest best 1RM and its change across the selected range. */
@@ -66,7 +73,8 @@ export class ExerciseProgress {
   protected readonly chartLabel = computed(() => {
     const pts = this.points();
     if (pts.length === 0) return 'No sessions in this range';
-    return `Estimated 1-rep max from ${round(pts[0].y)} kg to ${round(pts.at(-1)!.y)} kg over ${pts.length} sessions`;
+    const u = this.unit();
+    return `Estimated 1-rep max from ${round(pts[0].y)} ${u} to ${round(pts.at(-1)!.y)} ${u} over ${pts.length} sessions`;
   });
 
   protected round = round;

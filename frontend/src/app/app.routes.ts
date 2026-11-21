@@ -53,9 +53,10 @@ export const routes: Routes = [
     title: 'Edit routine · HomeLift',
   },
   {
-    path: 'data',
-    loadComponent: () => import('./data/data-page').then((m) => m.DataPage),
-    title: 'Your data · HomeLift',
+    path: 'settings',
+    loadComponent: () => import('./settings/settings-page').then((m) => m.SettingsPage),
+    title: 'Settings · HomeLift',
   },
+  { path: 'data', redirectTo: 'settings' },
   { path: '**', redirectTo: '' },
 ];

@@ -1,10 +1,15 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DEFAULT_REST_SECONDS, RestTimer } from './rest-timer.service';
 
 describe('RestTimer', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.useFakeTimers();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
   });
   afterEach(() => vi.useRealTimers());
 
@@ -47,6 +52,23 @@ describe('RestTimer', () => {
     expect(timer.remaining()).toBe(DEFAULT_REST_SECONDS - 100);
   });
 
+  it('uses the default rest from settings', () => {
+    localStorage.setItem('homelift.settings', JSON.stringify({ defaultRestSeconds: 90 }));
+    const timer = TestBed.inject(RestTimer);
+    timer.start();
+    expect(timer.remaining()).toBe(90);
+  });
+
+  it('stays still when vibration is off', () => {
+    localStorage.setItem('homelift.settings', JSON.stringify({ restVibrate: false }));
+    const vibrate = vi.fn();
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
+    const timer = TestBed.inject(RestTimer);
+    timer.start(5);
+    vi.advanceTimersByTime(6_000);
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
   it('vibrates when rest is over', () => {
     const vibrate = vi.fn();
     Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
@@ -61,6 +83,9 @@ describe('RestTimer', () => {
     first.start(90);
     first.toggleSound();
     TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
 
     const second = TestBed.inject(RestTimer);
     expect(second.remaining()).toBe(90);

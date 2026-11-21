@@ -76,17 +76,17 @@
 
       <section class="card sets" aria-label="Sets">
         <div class="grid head">
-          <span>Set</span><span>Last time</span><span class="num">kg</span
+          <span>Set</span><span>Last time</span><span class="num">{{ unit() }}</span
           ><span class="num">Reps</span><span></span>
         </div>
         @for (row of rows(); track row.number) {
           <div class="grid" [class.next]="row.next" [class.todo]="!row.logged && !row.next">
             <span>{{ row.number }}</span>
             <span class="last">{{
-              row.last ? formatKg(row.last.weightKg) + ' × ' + row.last.reps : '–'
+              row.last ? (row.last.weightKg | weight: 1 : false) + ' × ' + row.last.reps : '–'
             }}</span>
             @if (row.logged; as s) {
-              <span class="num">{{ formatKg(s.weightKg) }}</span><span class="num">{{
+              <span class="num">{{ s.weightKg | weight: 1 : false }}</span><span class="num">{{
                 s.reps
               }}</span>
               <button
@@ -108,7 +108,7 @@
                 </svg>
               </button>
             } @else if (row.next) {
-              <span class="num">{{ formatKg(weight()) }}</span><span class="num">{{ reps() }}</span
+              <span class="num">{{ weight() }}</span><span class="num">{{ reps() }}</span
               ><span class="ring" aria-hidden="true"></span>
             } @else {
               <span class="num"></span><span class="num"></span><span></span>
@@ -120,11 +120,11 @@
       <section class="steppers" [attr.aria-label]="'Set ' + nextSetNumber()">
         <app-stepper
           id="weight-label"
-          label="Weight (kg)"
+          [label]="'Weight (' + unit() + ')'"
           [(value)]="weight"
-          [step]="weightStep"
-          decreaseLabel="Decrease weight by 2.5 kg"
-          increaseLabel="Increase weight by 2.5 kg"
+          [step]="weightStep()"
+          [decreaseLabel]="'Decrease weight by ' + weightStep() + ' ' + unit()"
+          [increaseLabel]="'Increase weight by ' + weightStep() + ' ' + unit()"
         />
         <app-stepper
           id="reps-label"
@@ -140,7 +140,7 @@
       }
 
       <button type="button" class="btn-primary log" [disabled]="busy()" (click)="logSet()">
-        Log set {{ nextSetNumber() }} · {{ formatKg(weight()) }} kg × {{ reps() }}
+        Log set {{ nextSetNumber() }} · {{ weight() }} {{ unit() }} × {{ reps() }}
       </button>
     } @else {
       <p class="sub empty">Add your first exercise to start logging.</p>
@@ -163,11 +163,11 @@
         <div class="steppers">
           <app-stepper
             id="edit-weight-label"
-            label="Weight (kg)"
+            [label]="'Weight (' + unit() + ')'"
             [(value)]="editWeight"
-            [step]="weightStep"
-            decreaseLabel="Decrease weight by 2.5 kg"
-            increaseLabel="Increase weight by 2.5 kg"
+            [step]="weightStep()"
+            [decreaseLabel]="'Decrease weight by ' + weightStep() + ' ' + unit()"
+            [increaseLabel]="'Increase weight by ' + weightStep() + ' ' + unit()"
           />
           <app-stepper
             id="edit-reps-label"
@@ -178,7 +178,7 @@
           />
         </div>
         <button type="button" class="btn-primary" [disabled]="busy()" (click)="saveSet()">
-          Save · {{ formatKg(editWeight()) }} kg × {{ editReps() }}
+          Save · {{ editWeight() }} {{ unit() }} × {{ editReps() }}
         </button>
         <button type="button" class="link danger" [disabled]="busy()" (click)="deleteSet()">
           Delete set
@@ -202,7 +202,7 @@
         </div>
         <div>
           <dt>Volume</dt>
-          <dd>{{ summary().volume.toLocaleString() }} kg</dd>
+          <dd>{{ summary().volume | weight: 0 }}</dd>
         </div>
       </dl>
       <button type="button" class="btn-primary" [disabled]="busy()" (click)="confirmFinish()">

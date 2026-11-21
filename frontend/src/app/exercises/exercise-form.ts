@@ -1,6 +1,8 @@
-import { Component, inject, input, numberAttribute, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, numberAttribute, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
+import { SettingsService } from '../settings/settings.service';
+import { formatDuration } from '../workout/workout';
 import { EQUIPMENT, Equipment, Exercise, MUSCLE_GROUPS, MuscleGroup, label } from './exercise';
 import { ExerciseService, problemMessage } from './exercise.service';
 
@@ -65,6 +67,30 @@ import { ExerciseService, problemMessage } from './exercise.service';
           </div>
         </fieldset>
 
+        <fieldset>
+          <legend>Rest between sets</legend>
+          <div class="rest">
+            <button
+              type="button"
+              class="chip"
+              [class.on]="rest() === null"
+              [attr.aria-pressed]="rest() === null"
+              (click)="rest.set(null)"
+            >
+              Default ({{ format(defaultRest()) }})
+            </button>
+            <div class="rest-pick" [class.on]="rest() !== null">
+              <button type="button" aria-label="15 seconds less rest" (click)="nudgeRest(-15)">
+                −
+              </button>
+              <output>{{ format(rest() ?? defaultRest()) }}</output>
+              <button type="button" aria-label="15 seconds more rest" (click)="nudgeRest(15)">
+                +
+              </button>
+            </div>
+          </div>
+        </fieldset>
+
         @if (error(); as message) {
           <p class="error" role="alert">{{ message }}</p>
         }
@@ -83,6 +109,38 @@ import { ExerciseService, problemMessage } from './exercise.service';
     }
   `,
   styles: `
+    .rest {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .rest-pick {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 36px;
+      padding: 0 4px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+    }
+    .rest-pick.on {
+      border-color: var(--ink);
+    }
+    .rest-pick button {
+      width: 32px;
+      height: 32px;
+      border: 0;
+      background: none;
+      color: var(--ink);
+      font-size: 18px;
+    }
+    .rest-pick output {
+      min-width: 40px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+    }
     :host {
       display: contents;
     }
@@ -186,6 +244,7 @@ import { ExerciseService, problemMessage } from './exercise.service';
 export class ExerciseForm implements OnInit {
   private readonly api = inject(ExerciseService);
   private readonly router = inject(Router);
+  private readonly settings = inject(SettingsService);
 
   /** Bound from the :id route parameter; absent when adding. */
   readonly id = input(undefined, {
@@ -199,6 +258,10 @@ export class ExerciseForm implements OnInit {
   protected readonly name = signal('');
   protected readonly muscleGroup = signal<MuscleGroup | null>(null);
   protected readonly equipment = signal<Equipment | null>(null);
+  /** This exercise's own rest in seconds, or null to follow the default. */
+  protected readonly rest = signal<number | null>(null);
+  protected readonly defaultRest = computed(() => this.settings.settings().defaultRestSeconds);
+  protected readonly format = formatDuration;
   protected readonly archived = signal(false);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -226,7 +289,7 @@ export class ExerciseForm implements OnInit {
     const equipment = this.equipment();
     if (!this.canSave() || !muscleGroup || !equipment) return;
 
-    const input = { name: this.name().trim(), muscleGroup, equipment };
+    const input = { name: this.name().trim(), muscleGroup, equipment, restSeconds: this.rest() };
     const id = this.id();
     this.run(id ? this.api.update(id, input) : this.api.create(input), () =>
       this.router.navigate(['/exercises']),
@@ -257,10 +320,15 @@ export class ExerciseForm implements OnInit {
     });
   }
 
+  protected nudgeRest(seconds: number): void {
+    this.rest.update((r) => Math.min(900, Math.max(0, (r ?? this.defaultRest()) + seconds)));
+  }
+
   private fill(e: Exercise): void {
     this.name.set(e.name);
     this.muscleGroup.set(e.muscleGroup);
     this.equipment.set(e.equipment);
+    this.rest.set(e.restSeconds ?? null);
     this.archived.set(e.archived);
   }
 }

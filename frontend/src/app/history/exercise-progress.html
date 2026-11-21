@@ -23,10 +23,12 @@
     @if (headline(); as h) {
       <section class="headline">
         <span class="sub">Estimated 1-rep max</span>
-        <span class="big">{{ round(h.value) }} <span class="unit">kg</span></span>
+        <span class="big"
+          >{{ h.value | weight: 1 : false }} <span class="unit">{{ unit() }}</span></span
+        >
         @if (h.change !== null) {
           <span class="change" [class.down]="h.change < 0">
-            {{ signed(h.change) }} kg ({{ signed(h.percent ?? 0) }}%)
+            {{ signed(display(h.change)) }} {{ unit() }} ({{ signed(h.percent ?? 0) }}%)
             <span class="sub">{{
               range() === 'ALL' ? 'all time' : 'past ' + rangeName(range())
             }}</span>
@@ -34,7 +36,7 @@
         }
       </section>
 
-      <app-line-chart [points]="points()" [label]="chartLabel()" unit="kg" />
+      <app-line-chart [points]="points()" [label]="chartLabel()" [unit]="unit()" />
 
       <div class="ranges" role="group" aria-label="Range">
         @for (r of ranges; track r) {
@@ -54,7 +56,9 @@
           <span class="sub">Heaviest</span>
           <span class="val">{{
             d.history.records.heaviest
-              ? round(d.history.records.heaviest.weightKg) + ' × ' + d.history.records.heaviest.reps
+              ? (d.history.records.heaviest.weightKg | weight: 1 : false) +
+                ' × ' +
+                d.history.records.heaviest.reps
               : '–'
           }}</span>
         </div>
@@ -62,7 +66,9 @@
           <span class="sub">Most reps</span>
           <span class="val">{{
             d.history.records.mostReps
-              ? round(d.history.records.mostReps.weightKg) + ' × ' + d.history.records.mostReps.reps
+              ? (d.history.records.mostReps.weightKg | weight: 1 : false) +
+                ' × ' +
+                d.history.records.mostReps.reps
               : '–'
           }}</span>
         </div>
@@ -70,7 +76,7 @@
           <span class="sub">Top volume</span>
           <span class="val">{{
             d.history.records.sessionVolume
-              ? (d.history.records.sessionVolume.value | number: '1.0-0') + ' kg'
+              ? (d.history.records.sessionVolume.value | weight: 0)
               : '–'
           }}</span>
         </div>
@@ -83,12 +89,12 @@
             <div class="row">
               <div class="what">
                 <span class="date">{{ shortDate(s.date) }}</span>
-                <span class="sub">{{ describeSets(s.sets) }}</span>
+                <span class="sub">{{ describeSets(s.sets, unit(), display) }}</span>
               </div>
               @if (records().has(s.workoutId)) {
                 <span class="badge">Record</span>
               } @else {
-                <span class="sub">{{ s.volumeKg | number: '1.0-0' }} kg</span>
+                <span class="sub">{{ s.volumeKg | weight: 0 }}</span>
               }
             </div>
           }

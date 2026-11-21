@@ -1,9 +1,10 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { SettingsService } from '../settings/settings.service';
 
 const END_KEY = 'homelift.rest.endsAt';
 const TOTAL_KEY = 'homelift.rest.total';
-const SOUND_KEY = 'homelift.rest.sound';
+/** Used only until settings load; Settings holds the real default. */
 export const DEFAULT_REST_SECONDS = 120;
 /** How long "Rest over" stays on screen after the countdown ends. */
 const DONE_MS = 8000;
@@ -16,6 +17,7 @@ const DONE_MS = 8000;
 @Injectable({ providedIn: 'root' })
 export class RestTimer {
   private readonly document = inject(DOCUMENT);
+  private readonly settings = inject(SettingsService);
   private readonly endsAt = signal<number | null>(
     read(END_KEY, (v) => (v > Date.now() ? v : null)),
   );
@@ -24,7 +26,7 @@ export class RestTimer {
   private readonly finishedAt = signal<number | null>(null);
   private audio: AudioContext | null = null;
 
-  readonly soundOn = signal(read(SOUND_KEY, (v) => v !== 0, 1));
+  readonly soundOn = computed(() => this.settings.settings().restSound);
 
   /** Seconds left, or null when no rest is running. */
   readonly remaining = computed(() => {
@@ -64,7 +66,8 @@ export class RestTimer {
     if (this.audio.state === 'suspended') void this.audio.resume();
   }
 
-  start(seconds = DEFAULT_REST_SECONDS): void {
+  /** Starts a rest of the given length, or of the default rest from settings. */
+  start(seconds = this.settings.settings().defaultRestSeconds): void {
     this.finishedAt.set(null);
     this.total.set(seconds);
     this.save(TOTAL_KEY, seconds);
@@ -91,8 +94,7 @@ export class RestTimer {
   }
 
   toggleSound(): void {
-    this.soundOn.update((on) => !on);
-    this.save(SOUND_KEY, this.soundOn() ? 1 : 0);
+    this.settings.update({ restSound: !this.soundOn() });
     if (this.soundOn()) this.prime();
   }
 
@@ -107,7 +109,7 @@ export class RestTimer {
   }
 
   private alert(): void {
-    navigator.vibrate?.([200, 100, 200, 100, 400]);
+    if (this.settings.settings().restVibrate) navigator.vibrate?.([200, 100, 200, 100, 400]);
     if (this.soundOn() && this.audio) beep(this.audio);
   }
 

@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, input, numberAttribute, signal } f
 import { Router, RouterLink } from '@angular/router';
 import { Exercise } from '../exercises/exercise';
 import { problemMessage } from '../exercises/exercise.service';
+import { SettingsService } from '../settings/settings.service';
 import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from '../workout/exercise-picker';
@@ -28,6 +29,9 @@ export class RoutineEditor implements OnInit {
   private readonly api = inject(RoutineService);
   private readonly router = inject(Router);
   private readonly confirm = inject(ConfirmService);
+  private readonly settings = inject(SettingsService);
+  protected readonly unit = this.settings.unitLabel;
+  protected readonly weightStep = this.settings.weightStep;
 
   readonly id = input(undefined, {
     transform: (v: unknown) => (v == null ? undefined : numberAttribute(v)),
@@ -76,7 +80,13 @@ export class RoutineEditor implements OnInit {
   protected addMany(picked: Exercise[]): void {
     this.exercises.update((list) => [
       ...list,
-      ...picked.map((e) => ({ exerciseId: e.id, name: e.name, ...DEFAULT_PLAN })),
+      ...picked.map((e) => ({
+        exerciseId: e.id,
+        name: e.name,
+        ...DEFAULT_PLAN,
+        // The exercise's own rest, else the default rest from Settings.
+        restSeconds: e.restSeconds ?? this.settings.settings().defaultRestSeconds,
+      })),
     ]);
     this.open.set(picked.length === 1 ? this.exercises().length - 1 : null);
     this.picking.set(false);

@@ -1,9 +1,10 @@
-import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 import { HistoryService } from '../history/history.service';
+import { SettingsService } from '../settings/settings.service';
+import { WeightPipe } from '../settings/weight.pipe';
 import { Routine, exerciseSummary } from '../routines/routine';
 import { RoutineService } from '../routines/routine.service';
 import { Stats, change, isoDate, localDate } from '../stats/stats';
@@ -15,13 +16,14 @@ const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 /** The home summary: this week's volume, what's up next, the week at a glance and recent records. */
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, WeightPipe],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class Home {
   private readonly router = inject(Router);
   private readonly routinesApi = inject(RoutineService);
+  protected readonly unit = inject(SettingsService).unitLabel;
 
   protected readonly today = new Date().toLocaleDateString(undefined, {
     weekday: 'short',

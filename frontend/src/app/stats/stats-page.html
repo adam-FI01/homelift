@@ -81,7 +81,7 @@
         <p class="sub">
           Last {{ noun() }} you did {{ s.previous.workouts }}
           {{ s.previous.workouts === 1 ? 'workout' : 'workouts' }} and moved
-          {{ s.previous.volumeKg | number: '1.0-0' }} kg.
+          {{ s.previous.volumeKg | weight: 0 }}.
         </p>
       }
       @if (isCurrent()) {
@@ -92,7 +92,7 @@
     <section class="card hero" aria-label="Total volume">
       <span class="kicker">This {{ noun() }} you lifted</span>
       <span class="big"
-        >{{ s.totals.volumeKg | number: '1.0-0' }} <span class="unit">kg</span></span
+        >{{ s.totals.volumeKg | weight: 0 : false }} <span class="unit">{{ unit() }}</span></span
       >
       @if (comparison(); as c) {
         <span class="sub">That's {{ c }}.</span>
@@ -129,9 +129,9 @@
       <section class="card" aria-label="Running total">
         <span class="kicker">Running total</span>
         <span class="headline"
-          >{{ s.totals.volumeKg | number: '1.0-0' }} kg <span class="unit">so far</span></span
+          >{{ s.totals.volumeKg | weight: 0 }} <span class="unit">so far</span></span
         >
-        <app-line-chart [points]="runningTotal()" [label]="runningLabel()" unit="kg" />
+        <app-line-chart [points]="runningTotal()" [label]="runningLabel()" [unit]="unit()" />
       </section>
     }
 
@@ -139,7 +139,7 @@
       <a class="card story" [routerLink]="['/exercises', top.exerciseId]">
         <span class="kicker">Your most-trained lift</span>
         <span class="headline">{{ top.name }}</span>
-        <span class="sub">{{ top.sets }} sets · {{ top.volumeKg | number: '1.0-0' }} kg moved</span>
+        <span class="sub">{{ top.sets }} sets · {{ top.volumeKg | weight: 0 }} moved</span>
       </a>
     }
 
@@ -147,7 +147,7 @@
       <a class="card story" [routerLink]="['/exercises', h.exerciseId]">
         <span class="kicker">Heaviest lift</span>
         <span class="headline"
-          >{{ h.weightKg | number: '1.0-1' }} kg <span class="unit">× {{ h.reps }}</span></span
+          >{{ h.weightKg | weight }} <span class="unit">× {{ h.reps }}</span></span
         >
         <span class="sub">{{ h.name }} · {{ dayLabel(h.date) }}</span>
       </a>
@@ -167,8 +167,8 @@
               <a [routerLink]="['/exercises', r.exerciseId]">
                 <span class="name">{{ r.name }}</span>
                 <span class="sub"
-                  >{{ r.weightKg | number: '1.0-1' }} kg × {{ r.reps }} · e1RM
-                  {{ r.estimatedOneRepMax | number: '1.0-1' }}</span
+                  >{{ r.weightKg | weight }} × {{ r.reps }} · e1RM
+                  {{ r.estimatedOneRepMax | weight }}</span
                 >
               </a>
             </li>
@@ -231,7 +231,7 @@
       @if (s.totals.workouts > 1) {
         <section class="card story" aria-label="Biggest session">
           <span class="kicker">Biggest session</span>
-          <span class="headline">{{ b.volumeKg | number: '1.0-0' }} kg</span>
+          <span class="headline">{{ b.volumeKg | weight: 0 }}</span>
           <span class="sub">{{ dayLabel(b.date) }} · {{ b.sets }} sets</span>
         </section>
       }

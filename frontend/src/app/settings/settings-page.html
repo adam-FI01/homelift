@@ -1,0 +1,155 @@
+<header class="head">
+  <a routerLink="/" class="icon" aria-label="Back to home">
+    <svg
+      aria-hidden="true"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  </a>
+  <h1>Settings</h1>
+</header>
+
+<section class="group" aria-labelledby="rest-title">
+  <h2 id="rest-title">Rest timer</h2>
+  <div class="card list">
+    <div class="row">
+      <div class="what">
+        <span class="name">Default rest</span>
+        <span class="sub">Exercises and routines can set their own</span>
+      </div>
+      <div class="pick">
+        <button
+          type="button"
+          aria-label="15 seconds less default rest"
+          [disabled]="s().defaultRestSeconds <= 15"
+          (click)="nudgeRest(-15)"
+        >
+          −
+        </button>
+        <output aria-live="polite">{{ format(s().defaultRestSeconds) }}</output>
+        <button
+          type="button"
+          aria-label="15 seconds more default rest"
+          [disabled]="s().defaultRestSeconds >= 900"
+          (click)="nudgeRest(15)"
+        >
+          +
+        </button>
+      </div>
+    </div>
+    @for (t of toggles; track t.key) {
+      <div class="row">
+        <div class="what">
+          <span class="name" [id]="t.key + '-label'">{{ t.title }}</span>
+          <span class="sub">{{ t.detail }}</span>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          class="switch"
+          [attr.aria-checked]="s()[t.key]"
+          [attr.aria-labelledby]="t.key + '-label'"
+          (click)="toggle(t.key)"
+        >
+          <span></span>
+        </button>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="group" aria-labelledby="units-title">
+  <h2 id="units-title">Units</h2>
+  <div class="segments" role="radiogroup" aria-labelledby="units-title">
+    @for (o of unitOptions; track o.value) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="s().units === o.value"
+        (click)="set({ units: o.value })"
+      >
+        {{ o.label }}
+      </button>
+    }
+  </div>
+  <p class="note">Weights are stored in kg, so you can switch back and forth freely.</p>
+</section>
+
+<section class="group" aria-labelledby="theme-title">
+  <h2 id="theme-title">Appearance</h2>
+  <div class="segments" role="radiogroup" aria-labelledby="theme-title">
+    @for (o of themeOptions; track o.value) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="s().theme === o.value"
+        (click)="set({ theme: o.value })"
+      >
+        {{ o.label }}
+      </button>
+    }
+  </div>
+</section>
+
+<section class="group" aria-labelledby="data-title">
+  <h2 id="data-title">Your data</h2>
+  <div class="card list">
+    @for (d of downloads; track d.href) {
+      <a class="row" [href]="d.href" download>
+        <div class="what">
+          <span class="name">{{ d.title }}</span>
+          <span class="sub">{{ d.detail }}</span>
+        </div>
+        <svg
+          aria-hidden="true"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+        </svg>
+      </a>
+    }
+  </div>
+  <details class="card restore">
+    <summary>Restoring a backup</summary>
+    <ol>
+      <li>Stop the HomeLift container.</li>
+      <li>
+        Replace <code>homelift.db</code> in its data folder with the backup file, renamed to
+        <code>homelift.db</code>.
+      </li>
+      <li>Start the container again.</li>
+    </ol>
+  </details>
+</section>
+
+<section class="group" aria-labelledby="more-title">
+  <h2 id="more-title">More</h2>
+  <div class="card list">
+    <a class="row" routerLink="/exercises">
+      <span class="name">Exercise library</span>
+      <svg
+        aria-hidden="true"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </a>
+  </div>
+  <p class="note">{{ version() ?? '' }}</p>
+</section>

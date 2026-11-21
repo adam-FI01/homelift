@@ -51,7 +51,7 @@ import { RestTimer } from './rest-timer.service';
       padding: 0 12px;
       border-radius: 17px;
       border: 0;
-      background: rgb(255 255 255 / 0.16);
+      background: color-mix(in srgb, currentColor 16%, transparent);
       color: inherit;
       font-size: 13px;
       font-weight: 500;
@@ -70,11 +70,6 @@ import { RestTimer } from './rest-timer.service';
       font-weight: 600;
       background: var(--pos);
       color: #fff;
-    }
-    @media (prefers-color-scheme: dark) {
-      button {
-        background: rgb(0 0 0 / 0.1);
-      }
     }
   `,
 })

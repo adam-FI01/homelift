@@ -2,7 +2,7 @@
   <span class="brand">HomeLift</span>
   <div class="top-right">
     <span class="sub">{{ today }}</span>
-    <a routerLink="/data" class="gear" aria-label="Backup and export">
+    <a routerLink="/settings" class="gear" aria-label="Settings">
       <svg
         aria-hidden="true"
         width="20"
@@ -11,8 +11,11 @@
         fill="none"
         stroke="currentColor"
         stroke-width="1.75"
+        stroke-linecap="round"
       >
-        <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+        <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+        <circle cx="16" cy="7" r="2" />
+        <circle cx="10" cy="17" r="2" />
       </svg>
     </a>
   </div>
@@ -27,7 +30,7 @@
     <a class="volume" routerLink="/stats" aria-label="Volume this week, open stats">
       <span class="sub">Volume this week</span>
       <span class="big"
-        >{{ w.totals.volumeKg | number: '1.0-0' }} <span class="unit">kg</span></span
+        >{{ w.totals.volumeKg | weight: 0 : false }} <span class="unit">{{ unit() }}</span></span
       >
       @if (volumeChange(); as pct) {
         <span class="delta" [class.down]="pct < 0"
@@ -115,7 +118,7 @@
             <span class="rec-name">{{ r.name }}</span>
             <span class="sub small">New record · {{ dayName(r.date) }}</span>
           </div>
-          <span class="rec-val">{{ r.weightKg | number: '1.0-1' }} kg × {{ r.reps }}</span>
+          <span class="rec-val">{{ r.weightKg | weight }} × {{ r.reps }}</span>
           <svg
             aria-hidden="true"
             width="16"

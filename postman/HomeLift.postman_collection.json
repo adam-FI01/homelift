@@ -172,7 +172,7 @@
             "description": "Equipment: BARBELL, DUMBBELL, MACHINE, CABLE, BODYWEIGHT, KETTLEBELL, OTHER. Returns 409 if the name exists (ignoring case). Saves {{newExerciseId}}.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cable Lateral Raise\",\n  \"muscleGroup\": \"SHOULDERS\",\n  \"equipment\": \"CABLE\"\n}",
+              "raw": "{\n  \"name\": \"Postman Cable Y Raise\",\n  \"muscleGroup\": \"SHOULDERS\",\n  \"equipment\": \"CABLE\",\n  \"restSeconds\": null\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -215,10 +215,10 @@
                 "{{newExerciseId}}"
               ]
             },
-            "description": "",
+            "description": "restSeconds: this exercise's own rest, or null to use the default from settings.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cable Lateral Raise\",\n  \"muscleGroup\": \"SHOULDERS\",\n  \"equipment\": \"CABLE\"\n}",
+              "raw": "{\n  \"name\": \"Postman Cable Y Raise\",\n  \"muscleGroup\": \"SHOULDERS\",\n  \"equipment\": \"CABLE\",\n  \"restSeconds\": 90\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1026,6 +1026,84 @@
               ]
             },
             "description": "period: DAY, WEEK, MONTH, QUARTER or YEAR. date: any day in the period (defaults to today). zone: IANA time zone for day boundaries."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "description": "App-wide preferences, shared by every device.",
+      "item": [
+        {
+          "name": "Get settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Defaults: 2:00 rest, auto-start on, sound and vibration on, KG, SYSTEM theme."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "settings"
+              ]
+            },
+            "description": "Replaces all settings. units: KG or LB. theme: SYSTEM, LIGHT or DARK.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"defaultRestSeconds\": 120,\n  \"autoStartRest\": true,\n  \"restSound\": true,\n  \"restVibrate\": true,\n  \"units\": \"KG\",\n  \"theme\": \"SYSTEM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "event": [
             {
