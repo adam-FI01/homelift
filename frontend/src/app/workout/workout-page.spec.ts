@@ -11,6 +11,7 @@ const WORKOUT: Workout = {
   id: 7,
   name: 'Push A',
   routineId: null,
+  notes: null,
   startedAt: new Date().toISOString(),
   finishedAt: null,
   exercises: [
@@ -24,7 +25,9 @@ const WORKOUT: Workout = {
       targetReps: null,
       restSeconds: null,
       autoProgress: false,
-      sets: [{ id: 100, setNumber: 1, weightKg: 82.5, reps: 5 }],
+      supersetGroup: null,
+      notes: null,
+      sets: [{ id: 100, setNumber: 1, weightKg: 82.5, reps: 5, warmup: false }],
       lastTime: [
         { weightKg: 80, reps: 5 },
         { weightKg: 80, reps: 4 },
@@ -40,6 +43,8 @@ const WORKOUT: Workout = {
       targetReps: null,
       restSeconds: null,
       autoProgress: false,
+      supersetGroup: null,
+      notes: null,
       sets: [],
       lastTime: [],
     },
@@ -98,15 +103,21 @@ describe('WorkoutPage', () => {
     button('Log set 2').click();
 
     const req = http.expectOne({ method: 'POST', url: '/api/workouts/7/exercises/11/sets' });
-    expect(req.request.body).toEqual({ weightKg: 82.5, reps: 5 });
-    req.flush({ id: 101, setNumber: 2, weightKg: 82.5, reps: 5 });
-    expect(rest.remaining()).toBeGreaterThan(0);
+    expect(req.request.body).toEqual({ weightKg: 82.5, reps: 5, warmup: false });
+    req.flush({ id: 101, setNumber: 2, weightKg: 82.5, reps: 5, warmup: false });
 
     const updated = structuredClone(WORKOUT);
-    updated.exercises[0].sets.push({ id: 101, setNumber: 2, weightKg: 82.5, reps: 5 });
+    updated.exercises[0].sets.push({
+      id: 101,
+      setNumber: 2,
+      weightKg: 82.5,
+      reps: 5,
+      warmup: false,
+    });
     http.expectOne('/api/workouts/7').flush(updated);
     await fixture.whenStable();
 
+    expect(rest.remaining()).toBeGreaterThan(0);
     expect(el.querySelector('h1')?.textContent).toBe('Overhead Press');
     expect(el.querySelector('[aria-label="Rest timer"]')).not.toBeNull();
     http.verify();
@@ -117,15 +128,15 @@ describe('WorkoutPage', () => {
     (el.querySelector('[aria-label="Set 1 logged. Edit"]') as HTMLButtonElement).click();
     await fixture.whenStable();
     const sheet = [...el.querySelectorAll('app-sheet')].find((s) =>
-      s.textContent?.includes('Edit set 1'),
+      s.textContent?.includes('Edit set'),
     )!;
     (sheet.querySelector('[aria-label="One fewer rep"]') as HTMLButtonElement).click();
     await fixture.whenStable();
     [...sheet.querySelectorAll('button')].find((b) => b.textContent?.includes('Save'))!.click();
 
     const req = http.expectOne({ method: 'PUT', url: '/api/workouts/7/exercises/11/sets/100' });
-    expect(req.request.body).toEqual({ weightKg: 82.5, reps: 4 });
-    req.flush({ id: 100, setNumber: 1, weightKg: 82.5, reps: 4 });
+    expect(req.request.body).toEqual({ weightKg: 82.5, reps: 4, warmup: false });
+    req.flush({ id: 100, setNumber: 1, weightKg: 82.5, reps: 4, warmup: false });
     http.expectOne('/api/workouts/7').flush(WORKOUT);
   });
 
@@ -149,5 +160,24 @@ describe('WorkoutPage', () => {
       expect.objectContaining({ title: 'Discard this workout?', danger: true }),
     );
     http.expectNone({ method: 'DELETE' });
+  });
+
+  it('logs warm-ups without resting or moving on', async () => {
+    const { fixture, el, button, http, rest } = await setup(WORKOUT);
+    button('Warm-up').click();
+    await fixture.whenStable();
+    button('Log warm-up').click();
+    const req = http.expectOne({ method: 'POST', url: '/api/workouts/7/exercises/11/sets' });
+    expect(req.request.body.warmup).toBe(true);
+    req.flush({ id: 102, setNumber: 2, weightKg: 82.5, reps: 5, warmup: true });
+    const updated = structuredClone(WORKOUT);
+    updated.exercises[0].sets.push({ id: 102, setNumber: 2, weightKg: 40, reps: 8, warmup: true });
+    http.expectOne('/api/workouts/7').flush(updated);
+    await fixture.whenStable();
+
+    expect(rest.remaining()).toBeNull();
+    expect(el.querySelector('h1')?.textContent).toBe('Bench Press');
+    expect([...el.querySelectorAll('.grid.warm')]).toHaveLength(1);
+    expect(el.textContent).toContain('Log warm-up');
   });
 });

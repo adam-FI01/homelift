@@ -121,6 +121,35 @@ class WorkoutApiTests {
 	}
 
 	@Test
+	void warmUpsAreLoggedButLeftOutOfLastTimeAndVolume() {
+		long first = start(null);
+		long squat = addExercise(first, "Front Squat");
+		logWarmup(first, squat, 40, 8);
+		logSet(first, squat, 80, 5);
+		this.mvc.post().uri("/api/workouts/{id}/finish", first).exchange();
+
+		assertThat(JsonPath.<List<Boolean>>read(view(first), "$.exercises[0].sets[*].warmup")).containsExactly(true,
+				false);
+		String recent = body(this.mvc.get().uri("/api/workouts?limit=1").exchange());
+		assertThat(JsonPath.<Double>read(recent, "$[0].volumeKg")).isEqualTo(400.0);
+		assertThat(JsonPath.<Integer>read(recent, "$[0].sets")).isEqualTo(1);
+
+		long second = start(null);
+		addExercise(second, "Front Squat");
+		assertThat(JsonPath.<List<Double>>read(view(second), "$.exercises[0].lastTime[*].weightKg")).containsExactly(80.0);
+	}
+
+	@Test
+	void notesCanBeWrittenDuringAndAfterAWorkout() {
+		long workout = start(null);
+		assertThat(put("/api/workouts/" + workout + "/notes", "{\"notes\":\"  Felt strong  \"}")).hasStatusOk();
+		assertThat(JsonPath.<String>read(view(workout), "$.notes")).isEqualTo("Felt strong");
+		this.mvc.post().uri("/api/workouts/{id}/finish", workout).exchange();
+		assertThat(put("/api/workouts/" + workout + "/notes", "{\"notes\":\" \"}")).hasStatusOk();
+		assertThat(JsonPath.<Object>read(view(workout), "$.notes")).isNull();
+	}
+
+	@Test
 	void aFinishedWorkoutCannotChange() {
 		long workout = start(null);
 		long dip = addExercise(workout, "Dip");
@@ -190,6 +219,15 @@ class WorkoutApiTests {
 	private MvcTestResult logSet(long workout, long workoutExercise, double weightKg, int reps) {
 		return post("/api/workouts/" + workout + "/exercises/" + workoutExercise + "/sets",
 				"{\"weightKg\":%s,\"reps\":%d}".formatted(weightKg, reps));
+	}
+
+	private MvcTestResult logWarmup(long workout, long workoutExercise, double weightKg, int reps) {
+		return post("/api/workouts/" + workout + "/exercises/" + workoutExercise + "/sets",
+				"{\"weightKg\":%s,\"reps\":%d,\"warmup\":true}".formatted(weightKg, reps));
+	}
+
+	private MvcTestResult put(String uri, String json) {
+		return this.mvc.put().uri(uri).contentType(MediaType.APPLICATION_JSON).content(json).exchange();
 	}
 
 	private long setId(MvcTestResult result) {

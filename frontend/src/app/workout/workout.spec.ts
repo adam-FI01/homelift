@@ -1,4 +1,11 @@
-import { WorkoutExercise, formatDuration, formatKg, nextSetDefaults } from './workout';
+import {
+  Workout,
+  WorkoutExercise,
+  afterLog,
+  formatDuration,
+  formatKg,
+  nextSetDefaults,
+} from './workout';
 
 function exercise(overrides: Partial<WorkoutExercise> = {}): WorkoutExercise {
   return {
@@ -11,6 +18,8 @@ function exercise(overrides: Partial<WorkoutExercise> = {}): WorkoutExercise {
     targetReps: null,
     restSeconds: null,
     autoProgress: false,
+    supersetGroup: null,
+    notes: null,
     sets: [],
     lastTime: [],
     ...overrides,
@@ -20,7 +29,7 @@ function exercise(overrides: Partial<WorkoutExercise> = {}): WorkoutExercise {
 describe('nextSetDefaults', () => {
   it('repeats the set just logged today', () => {
     const ex = exercise({
-      sets: [{ id: 1, setNumber: 1, weightKg: 82.5, reps: 5 }],
+      sets: [{ id: 1, setNumber: 1, weightKg: 82.5, reps: 5, warmup: false }],
       lastTime: [{ weightKg: 80, reps: 5 }],
     });
     expect(nextSetDefaults(ex)).toEqual({ weightKg: 82.5, reps: 5 });
@@ -77,5 +86,58 @@ describe('auto progression', () => {
 
   it('uses the planned reps when there is no history', () => {
     expect(nextSetDefaults(exercise({ targetReps: 12 })).reps).toBe(12);
+  });
+});
+
+describe('afterLog', () => {
+  const ex = (id: number, group: number | null, done: number, target = 3): WorkoutExercise =>
+    exercise({
+      id,
+      supersetGroup: group,
+      targetSets: target,
+      sets: Array.from({ length: done }, (_, i) => ({
+        id: i,
+        setNumber: i + 1,
+        weightKg: 50,
+        reps: 8,
+        warmup: false,
+      })),
+    });
+  const workout = (...exercises: WorkoutExercise[]): Workout => ({
+    id: 1,
+    name: null,
+    routineId: null,
+    notes: null,
+    startedAt: '',
+    finishedAt: null,
+    exercises,
+  });
+
+  it('rests and stays until the planned sets are done, then moves on', () => {
+    expect(afterLog(workout(ex(1, null, 1), ex(2, null, 0)), 0)).toEqual({ index: 0, rest: true });
+    expect(afterLog(workout(ex(1, null, 3), ex(2, null, 0)), 0)).toEqual({ index: 1, rest: true });
+  });
+
+  it('alternates through a superset and rests after the round', () => {
+    const w = workout(ex(1, 1, 1), ex(2, 1, 0), ex(3, null, 0));
+    expect(afterLog(w, 0)).toEqual({ index: 1, rest: false });
+    expect(afterLog(workout(ex(1, 1, 1), ex(2, 1, 1), ex(3, null, 0)), 1)).toEqual({
+      index: 0,
+      rest: true,
+    });
+    expect(afterLog(workout(ex(1, 1, 3), ex(2, 1, 3), ex(3, null, 0)), 1)).toEqual({
+      index: 2,
+      rest: true,
+    });
+  });
+
+  it('ignores warm-ups when picking last set', () => {
+    const e = exercise({
+      sets: [
+        { id: 1, setNumber: 1, weightKg: 80, reps: 5, warmup: false },
+        { id: 2, setNumber: 2, weightKg: 40, reps: 10, warmup: true },
+      ],
+    });
+    expect(nextSetDefaults(e)).toEqual({ weightKg: 80, reps: 5 });
   });
 });

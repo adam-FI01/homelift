@@ -5,6 +5,8 @@ export interface LoggedSet {
   setNumber: number;
   weightKg: number;
   reps: number;
+  /** Warm-ups are kept but left out of volume, records and "last time". */
+  warmup: boolean;
 }
 
 export interface PreviousSet {
@@ -26,6 +28,10 @@ export interface WorkoutExercise {
   restSeconds: number | null;
   /** Add weight when every set last time reached the planned reps. */
   autoProgress: boolean;
+  /** Exercises with the same group are a superset, done back to back. */
+  supersetGroup: number | null;
+  /** Set-up cues saved on the exercise, such as seat height. */
+  notes: string | null;
   sets: LoggedSet[];
   lastTime: PreviousSet[];
 }
@@ -36,6 +42,7 @@ export interface Workout {
   routineId: number | null;
   startedAt: string;
   finishedAt: string | null;
+  notes: string | null;
   exercises: WorkoutExercise[];
 }
 
@@ -47,7 +54,7 @@ export const WEIGHT_STEP_KG = 2.5;
  * starting point for the equipment.
  */
 export function nextSetDefaults(exercise: WorkoutExercise, stepKg = WEIGHT_STEP_KG): PreviousSet {
-  const today = exercise.sets.at(-1);
+  const today = workingSets(exercise).at(-1);
   if (today) return { weightKg: today.weightKg, reps: today.reps };
   const target = exercise.targetReps;
   const previous = exercise.lastTime[0];
@@ -93,4 +100,35 @@ export function formatDuration(totalSeconds: number): string {
   const m = Math.floor((s % 3600) / 60);
   const sec = String(s % 60).padStart(2, '0');
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+}
+
+/** The sets that count: everything but warm-ups. */
+export function workingSets(exercise: WorkoutExercise): LoggedSet[] {
+  return exercise.sets.filter((s) => !s.warmup);
+}
+
+/** Indexes of the exercises in the same superset as the one at `index`, in order. */
+export function supersetOf(workout: Workout, index: number): number[] {
+  const group = workout.exercises[index]?.supersetGroup;
+  if (group == null) return [index];
+  return workout.exercises.flatMap((e, i) => (e.supersetGroup === group ? [i] : []));
+}
+
+/**
+ * Where to go after logging a working set on the exercise at `index`, and whether to rest.
+ * In a superset you move straight to the next exercise and rest after the round; otherwise you
+ * rest, and move on once the planned sets are done.
+ */
+export function afterLog(workout: Workout, index: number): { index: number; rest: boolean } {
+  const members = supersetOf(workout, index);
+  const pos = members.indexOf(index);
+  const remaining = (i: number) =>
+    workingSets(workout.exercises[i]).length < workout.exercises[i].targetSets;
+  if (members.length > 1 && pos < members.length - 1) {
+    return { index: members[pos + 1], rest: false };
+  }
+  const unfinished = members.find(remaining);
+  if (unfinished !== undefined) return { index: unfinished, rest: true };
+  const after = members.at(-1)! + 1;
+  return { index: after < workout.exercises.length ? after : index, rest: true };
 }

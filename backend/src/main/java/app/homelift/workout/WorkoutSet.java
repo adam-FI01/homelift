@@ -34,17 +34,22 @@ public class WorkoutSet {
 	@Column(nullable = false)
 	private int reps;
 
+	@Column(nullable = false)
+	private boolean warmup;
+
 	@Column(name = "logged_at", nullable = false, updatable = false)
 	private Instant loggedAt;
 
 	protected WorkoutSet() {
 	}
 
-	WorkoutSet(WorkoutExercise workoutExercise, int setNumber, double weightKg, int reps, Instant loggedAt) {
+	WorkoutSet(WorkoutExercise workoutExercise, int setNumber, double weightKg, int reps, boolean warmup,
+			Instant loggedAt) {
 		this.workoutExercise = workoutExercise;
 		this.setNumber = setNumber;
 		this.weightKg = weightKg;
 		this.reps = reps;
+		this.warmup = warmup;
 		this.loggedAt = loggedAt;
 	}
 
@@ -64,13 +69,19 @@ public class WorkoutSet {
 		return this.reps;
 	}
 
+	/** Warm-ups are kept in the log but left out of volume, records and "last time". */
+	public boolean isWarmup() {
+		return this.warmup;
+	}
+
 	public Instant getLoggedAt() {
 		return this.loggedAt;
 	}
 
-	void correct(double weightKg, int reps) {
+	void correct(double weightKg, int reps, boolean warmup) {
 		this.weightKg = weightKg;
 		this.reps = reps;
+		this.warmup = warmup;
 	}
 
 	void renumber(int setNumber) {

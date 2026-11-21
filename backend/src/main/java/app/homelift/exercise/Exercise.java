@@ -35,14 +35,19 @@ public class Exercise {
 	@Column(name = "rest_seconds")
 	private @Nullable Integer restSeconds;
 
+	/** Set-up cues such as seat height or grip. */
+	private @Nullable String notes;
+
 	protected Exercise() {
 	}
 
-	public Exercise(String name, MuscleGroup muscleGroup, Equipment equipment, @Nullable Integer restSeconds) {
+	public Exercise(String name, MuscleGroup muscleGroup, Equipment equipment, @Nullable Integer restSeconds,
+			@Nullable String notes) {
 		this.name = name;
 		this.muscleGroup = muscleGroup;
 		this.equipment = equipment;
 		this.restSeconds = restSeconds;
+		this.notes = notes;
 	}
 
 	public Long getId() {
@@ -65,15 +70,21 @@ public class Exercise {
 		return this.restSeconds;
 	}
 
+	public @Nullable String getNotes() {
+		return this.notes;
+	}
+
 	public boolean isArchived() {
 		return this.archived;
 	}
 
-	void update(String name, MuscleGroup muscleGroup, Equipment equipment, @Nullable Integer restSeconds) {
+	void update(String name, MuscleGroup muscleGroup, Equipment equipment, @Nullable Integer restSeconds,
+			@Nullable String notes) {
 		this.name = name;
 		this.muscleGroup = muscleGroup;
 		this.equipment = equipment;
 		this.restSeconds = restSeconds;
+		this.notes = notes;
 	}
 
 	void archive() {

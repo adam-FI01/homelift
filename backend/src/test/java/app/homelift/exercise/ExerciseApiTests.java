@@ -90,10 +90,11 @@ class ExerciseApiTests {
 		assertThat(this.mvc.put()
 			.uri("/api/exercises/{id}", id)
 			.contentType(MediaType.APPLICATION_JSON)
-			.content("{\"name\":\"Deadlift\",\"muscleGroup\":\"BACK\",\"equipment\":\"BARBELL\",\"restSeconds\":180}"))
+			.content("{\"name\":\"Deadlift\",\"muscleGroup\":\"BACK\",\"equipment\":\"BARBELL\",\"restSeconds\":180,\"notes\":\" Belt on \"}"))
 			.hasStatusOk()
 			.bodyJson()
-			.hasPathSatisfying("$.restSeconds", (v) -> assertThat(v).isEqualTo(180));
+			.hasPathSatisfying("$.restSeconds", (v) -> assertThat(v).isEqualTo(180))
+			.hasPathSatisfying("$.notes", (v) -> assertThat(v).asString().isEqualTo("Belt on"));
 	}
 
 	@Test

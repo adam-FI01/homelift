@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.jspecify.annotations.Nullable;
 
 import app.homelift.exercise.Exercise;
 
@@ -44,15 +45,20 @@ public class RoutineExercise {
 	@Column(name = "auto_progress", nullable = false)
 	private boolean autoProgress;
 
+	@Column(name = "superset_group")
+	private @Nullable Integer supersetGroup;
+
 	protected RoutineExercise() {
 	}
 
-	RoutineExercise(Exercise exercise, int sets, int reps, int restSeconds, boolean autoProgress) {
+	RoutineExercise(Exercise exercise, int sets, int reps, int restSeconds, boolean autoProgress,
+			@Nullable Integer supersetGroup) {
 		this.exercise = exercise;
 		this.sets = sets;
 		this.reps = reps;
 		this.restSeconds = restSeconds;
 		this.autoProgress = autoProgress;
+		this.supersetGroup = supersetGroup;
 	}
 
 	void attach(Routine routine, int position) {
@@ -86,6 +92,10 @@ public class RoutineExercise {
 
 	public boolean isAutoProgress() {
 		return this.autoProgress;
+	}
+
+	public @Nullable Integer getSupersetGroup() {
+		return this.supersetGroup;
 	}
 
 }

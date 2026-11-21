@@ -69,7 +69,13 @@
         <div class="heading">
           <span class="sub">Exercise {{ index() + 1 }} of {{ workout()!.exercises.length }}</span>
           <h1>{{ ex.name }}</h1>
+          @if (supersetPartners().length) {
+            <span class="superset">Superset with {{ supersetPartners().join(', ') }}</span>
+          }
           <span class="sub">{{ lastTimeSummary() }}</span>
+          @if (ex.notes) {
+            <span class="cue">{{ ex.notes }}</span>
+          }
         </div>
         <button type="button" class="pill" (click)="removeExercise()">Remove</button>
       </section>
@@ -79,9 +85,14 @@
           <span>Set</span><span>Last time</span><span class="num">{{ unit() }}</span
           ><span class="num">Reps</span><span></span>
         </div>
-        @for (row of rows(); track row.number) {
-          <div class="grid" [class.next]="row.next" [class.todo]="!row.logged && !row.next">
-            <span>{{ row.number }}</span>
+        @for (row of rows(); track $index) {
+          <div
+            class="grid"
+            [class.next]="row.next"
+            [class.todo]="!row.logged && !row.next"
+            [class.warm]="row.warmup"
+          >
+            <span>{{ row.label }}</span>
             <span class="last">{{
               row.last ? (row.last.weightKg | weight: 1 : false) + ' × ' + row.last.reps : '–'
             }}</span>
@@ -92,7 +103,7 @@
               <button
                 type="button"
                 class="check"
-                [attr.aria-label]="'Set ' + row.number + ' logged. Edit'"
+                [attr.aria-label]="(row.warmup ? 'Warm-up' : 'Set ' + row.label) + ' logged. Edit'"
                 (click)="editSet(s)"
               >
                 <svg
@@ -139,8 +150,20 @@
         <p class="error" role="alert">{{ message }}</p>
       }
 
+      <div class="log-row">
+        <button
+          type="button"
+          class="warm-toggle"
+          [attr.aria-pressed]="warmupNext()"
+          (click)="warmupNext.set(!warmupNext())"
+        >
+          Warm-up
+        </button>
+      </div>
       <button type="button" class="btn-primary log" [disabled]="busy()" (click)="logSet()">
-        Log set {{ nextSetNumber() }} · {{ weight() }} {{ unit() }} × {{ reps() }}
+        {{ warmupNext() ? 'Log warm-up' : 'Log set ' + nextSetNumber() }} · {{ weight() }}
+        {{ unit() }} ×
+        {{ reps() }}
       </button>
     } @else {
       <p class="sub empty">Add your first exercise to start logging.</p>
@@ -155,7 +178,7 @@
     </app-sheet>
 
     <app-sheet
-      [title]="'Edit set ' + (editing()?.set?.setNumber ?? '')"
+      [title]="editing()?.set?.warmup ? 'Edit warm-up' : 'Edit set'"
       [open]="!!editing()"
       (closed)="editing.set(null)"
     >
@@ -176,6 +199,19 @@
             decreaseLabel="One fewer rep"
             increaseLabel="One more rep"
           />
+        </div>
+        <div class="row-toggle">
+          <span id="edit-warmup-label">Warm-up set</span>
+          <button
+            type="button"
+            role="switch"
+            class="switch"
+            aria-labelledby="edit-warmup-label"
+            [attr.aria-checked]="editWarmup()"
+            (click)="editWarmup.set(!editWarmup())"
+          >
+            <span></span>
+          </button>
         </div>
         <button type="button" class="btn-primary" [disabled]="busy()" (click)="saveSet()">
           Save · {{ editWeight() }} {{ unit() }} × {{ editReps() }}
@@ -205,6 +241,17 @@
           <dd>{{ summary().volume | weight: 0 }}</dd>
         </div>
       </dl>
+      <label class="notes">
+        <span>Notes</span>
+        <textarea
+          class="field"
+          rows="3"
+          maxlength="2000"
+          placeholder="How did it go?"
+          [value]="notesDraft()"
+          (input)="notesDraft.set($any($event.target).value)"
+        ></textarea>
+      </label>
       <button type="button" class="btn-primary" [disabled]="busy()" (click)="confirmFinish()">
         Finish workout
       </button>

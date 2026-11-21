@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 import { Exercise } from '../exercises/exercise';
 import { problemMessage } from '../exercises/exercise.service';
 import { describeSets } from '../history/history';
@@ -12,7 +12,16 @@ import { ExercisePicker } from './exercise-picker';
 import { RestTimer } from './rest-timer.service';
 import { RestTimerCard } from './rest-timer';
 import { Stepper } from './stepper';
-import { LoggedSet, Workout, earnedProgression, formatDuration, nextSetDefaults } from './workout';
+import {
+  LoggedSet,
+  Workout,
+  afterLog,
+  earnedProgression,
+  formatDuration,
+  nextSetDefaults,
+  supersetOf,
+  workingSets,
+} from './workout';
 import { WorkoutService } from './workout.service';
 
 /** The workout in progress: pick an exercise, log sets with one tap, rest between them. */
@@ -44,6 +53,10 @@ export class WorkoutPage {
   protected readonly editing = signal<{ set: LoggedSet } | null>(null);
   protected readonly editWeight = signal(0);
   protected readonly editReps = signal(0);
+  protected readonly editWarmup = signal(false);
+  /** Log the next set as a warm-up; switches off when you change exercise. */
+  protected readonly warmupNext = linkedSignal({ source: this.index, computation: () => false });
+  protected readonly notesDraft = signal('');
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -59,34 +72,55 @@ export class WorkoutPage {
     return ex ? nextSetDefaults(ex, this.settings.weightStepKg()).reps : 0;
   });
 
-  protected readonly nextSetNumber = computed(() => (this.current()?.sets.length ?? 0) + 1);
+  protected readonly nextSetNumber = computed(() => {
+    const ex = this.current();
+    return ex ? workingSets(ex).length + 1 : 1;
+  });
 
-  /** Rows for the sets table: every logged set plus the planned ones still to do. */
+  /** Names of the other exercises in the current superset, if any. */
+  protected readonly supersetPartners = computed(() => {
+    const w = this.workout();
+    if (!w) return [];
+    return supersetOf(w, this.index())
+      .filter((i) => i !== this.index())
+      .map((i) => w.exercises[i].name);
+  });
+
+  /** Rows for the sets table: warm-ups first, then every working set and the ones still to do. */
   protected readonly rows = computed(() => {
     const ex = this.current();
     if (!ex) return [];
-    const count = Math.max(ex.targetSets, ex.sets.length + 1);
-    return Array.from({ length: count }, (_, i) => ({
-      number: i + 1,
-      logged: ex.sets[i] ?? null,
-      last: ex.lastTime[i] ?? null,
-      next: i === ex.sets.length,
-    }));
+    const warmups = ex.sets.filter((s) => s.warmup);
+    const working = workingSets(ex);
+    const count = Math.max(ex.targetSets, working.length + 1);
+    return [
+      ...warmups.map((s) => ({ label: 'W', logged: s, last: null, next: false, warmup: true })),
+      ...Array.from({ length: count }, (_, i) => ({
+        label: String(i + 1),
+        logged: working[i] ?? null,
+        last: ex.lastTime[i] ?? null,
+        next: i === working.length,
+        warmup: false,
+      })),
+    ];
   });
 
   protected readonly progress = computed(() => {
     const exercises = this.workout()?.exercises ?? [];
-    const planned = exercises.reduce((n, e) => n + Math.max(e.targetSets, e.sets.length), 0);
-    const done = exercises.reduce((n, e) => n + e.sets.length, 0);
+    const planned = exercises.reduce(
+      (n, e) => n + Math.max(e.targetSets, workingSets(e).length),
+      0,
+    );
+    const done = exercises.reduce((n, e) => n + workingSets(e).length, 0);
     return planned ? Math.round((done / planned) * 100) : 0;
   });
 
-  /** Totals for the finish sheet. */
+  /** Totals for the finish sheet; warm-ups don't count. */
   protected readonly summary = computed(() => {
     const exercises = this.workout()?.exercises ?? [];
-    const sets = exercises.flatMap((e) => e.sets);
+    const sets = exercises.flatMap(workingSets);
     return {
-      exercises: exercises.filter((e) => e.sets.length > 0).length,
+      exercises: exercises.filter((e) => workingSets(e).length > 0).length,
       sets: sets.length,
       volume: Math.round(sets.reduce((kg, s) => kg + s.weightKg * s.reps, 0)),
     };
@@ -134,22 +168,29 @@ export class WorkoutPage {
     const w = this.workout();
     const ex = this.current();
     if (!w || !ex) return;
-    const finishesExercise = ex.sets.length + 1 >= ex.targetSets;
+    const warmup = this.warmupNext();
+    const from = this.index();
     this.rest.prime();
-    this.run(this.api.logSet(w.id, ex.id, this.settings.toKg(this.weight()), this.reps()), () => {
-      if (this.settings.settings().autoStartRest) this.rest.start(ex.restSeconds ?? undefined);
-      this.reload(() => {
-        // Move on once the planned sets are done, if there is a next exercise.
-        if (finishesExercise && this.index() < (this.workout()?.exercises.length ?? 0) - 1) {
-          this.index.update((i) => i + 1);
-        }
-      });
-    });
+    this.run(
+      this.api.logSet(w.id, ex.id, this.settings.toKg(this.weight()), this.reps(), warmup),
+      () => {
+        this.reload((updated) => {
+          // Warm-ups need no rest or move; working sets follow the superset and the plan.
+          if (warmup) return;
+          const next = afterLog(updated, from);
+          if (next.rest && this.settings.settings().autoStartRest) {
+            this.rest.start(ex.restSeconds ?? undefined);
+          }
+          this.index.set(next.index);
+        });
+      },
+    );
   }
 
   protected editSet(set: LoggedSet): void {
     this.editWeight.set(this.shown(set.weightKg));
     this.editReps.set(set.reps);
+    this.editWarmup.set(set.warmup);
     this.editing.set({ set });
   }
 
@@ -165,6 +206,7 @@ export class WorkoutPage {
         e.set.id,
         this.settings.toKg(this.editWeight()),
         this.editReps(),
+        this.editWarmup(),
       ),
       () => {
         this.editing.set(null);
@@ -205,13 +247,16 @@ export class WorkoutPage {
       void this.discard();
       return;
     }
+    this.notesDraft.set(this.workout()?.notes ?? '');
     this.finishing.set(true);
   }
 
   protected confirmFinish(): void {
     const w = this.workout();
     if (!w) return;
-    this.run(this.api.finish(w.id), () => {
+    const notes = this.notesDraft().trim();
+    const save = notes !== (w.notes ?? '') ? this.api.saveNotes(w.id, notes) : of(w);
+    this.run(save.pipe(switchMap(() => this.api.finish(w.id))), () => {
       this.finishing.set(false);
       this.rest.skip();
       this.router.navigate(['/']);
@@ -258,12 +303,12 @@ export class WorkoutPage {
     return Math.round(this.settings.display(kg) * 10) / 10;
   }
 
-  private reload(then?: () => void): void {
+  private reload(then?: (updated: Workout) => void): void {
     const w = this.workout();
     if (!w) return;
     this.api.get(w.id).subscribe((updated) => {
       this.workout.set(updated);
-      then?.();
+      then?.(updated);
     });
   }
 

@@ -53,7 +53,7 @@ public class WorkoutService {
 	/** The workout with each exercise's sets and what was lifted the last time. */
 	public WorkoutView view(long id) {
 		Workout w = get(id);
-		return new WorkoutView(w.getId(), w.getName(), w.getRoutineId(), w.getStartedAt(), w.getFinishedAt(),
+		return new WorkoutView(w.getId(), w.getName(), w.getRoutineId(), w.getStartedAt(), w.getFinishedAt(), w.getNotes(),
 				w.getExercises().stream().map((we) -> ExerciseView.of(we, previousSets(we))).toList());
 	}
 
@@ -63,7 +63,7 @@ public class WorkoutService {
 			.findPreviousExercise(current.getExercise().getId(), current.getWorkout().getId(), Limit.of(1))
 			.stream()
 			.findFirst()
-			.map(WorkoutExercise::getSets)
+			.map(WorkoutExercise::getWorkingSets)
 			.orElse(List.of());
 	}
 
@@ -83,8 +83,9 @@ public class WorkoutService {
 		Workout workout = start(name);
 		workout.startedFrom(routineId);
 		for (PlannedExercise p : plan) {
-			workout.addExercise(this.exercises.get(p.exerciseId()), p.sets())
-				.plan(p.reps(), p.restSeconds(), p.autoProgress());
+			WorkoutExercise added = workout.addExercise(this.exercises.get(p.exerciseId()), p.sets());
+			added.plan(p.reps(), p.restSeconds(), p.autoProgress());
+			added.supersetGroup(p.supersetGroup());
 		}
 		this.workouts.flush();
 		return workout;
@@ -107,19 +108,20 @@ public class WorkoutService {
 	}
 
 	@Transactional
-	WorkoutSet logSet(long workoutId, long workoutExerciseId, double weightKg, int reps) {
+	WorkoutSet logSet(long workoutId, long workoutExerciseId, double weightKg, int reps, boolean warmup) {
 		Workout workout = editable(workoutId);
-		WorkoutSet set = exerciseOf(workout, workoutExerciseId).logSet(weightKg, reps, this.clock.instant());
+		WorkoutSet set = exerciseOf(workout, workoutExerciseId).logSet(weightKg, reps, warmup, this.clock.instant());
 		this.workouts.flush();
 		return set;
 	}
 
 	/** Fixes the weight or reps of a set already logged. */
 	@Transactional
-	WorkoutSet updateSet(long workoutId, long workoutExerciseId, long setId, double weightKg, int reps) {
+	WorkoutSet updateSet(long workoutId, long workoutExerciseId, long setId, double weightKg, int reps,
+			boolean warmup) {
 		WorkoutSet set = exerciseOf(editable(workoutId), workoutExerciseId).findSet(setId)
 			.orElseThrow(() -> new WorkoutNotFoundException("Set " + setId));
-		set.correct(weightKg, reps);
+		set.correct(weightKg, reps, warmup);
 		return set;
 	}
 
@@ -128,6 +130,12 @@ public class WorkoutService {
 		Workout workout = editable(workoutId);
 		WorkoutExercise exercise = exerciseOf(workout, workoutExerciseId);
 		exercise.removeSet(exercise.findSet(setId).orElseThrow(() -> new WorkoutNotFoundException("Set " + setId)));
+	}
+
+	/** Notes can be added or changed at any time, even after the workout is finished. */
+	@Transactional
+	void notes(long workoutId, @Nullable String notes) {
+		get(workoutId).notes((notes == null || notes.isBlank()) ? null : notes.strip());
 	}
 
 	@Transactional

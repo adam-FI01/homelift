@@ -161,12 +161,21 @@ class DemoDataSeeder implements ApplicationRunner {
 			long workoutExerciseId = lastId();
 			double weight = roundTo(Math.max(0, (p.startKg() + p.weeklyGainKg() * weeks) * form),
 					(p.startKg() < 30) ? 1 : 2.5);
+			int number = 1;
+			if (p.auto()) {
+				// One warm-up at about half the working weight before the main lifts.
+				this.jdbc.update("""
+						insert into workout_set (workout_exercise_id, set_number, weight_kg, reps, warmup, logged_at)
+						values (?, ?, ?, ?, 1, ?)""", workoutExerciseId, number++, roundTo(weight / 2, 2.5), 8,
+						TEXT.format(clockTime));
+				clockTime = clockTime.plusSeconds(90);
+			}
 			for (int set = 1; set <= p.sets(); set++) {
 				int fatigue = (set > 2 && random.nextDouble() < 0.35) ? 1 + random.nextInt(2) : 0;
 				int reps = Math.max(1, p.reps() - fatigue - ((form < 1) ? 1 : 0) + ((random.nextDouble() < 0.1) ? 1 : 0));
 				this.jdbc.update("""
 						insert into workout_set (workout_exercise_id, set_number, weight_kg, reps, logged_at)
-						values (?, ?, ?, ?, ?)""", workoutExerciseId, set, weight, reps, TEXT.format(clockTime));
+						values (?, ?, ?, ?, ?)""", workoutExerciseId, number++, weight, reps, TEXT.format(clockTime));
 				clockTime = clockTime.plusSeconds(40 + p.rest());
 				count++;
 			}

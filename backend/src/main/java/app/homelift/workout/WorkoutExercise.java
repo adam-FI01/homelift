@@ -54,6 +54,9 @@ public class WorkoutExercise {
 	@Column(name = "auto_progress", nullable = false)
 	private boolean autoProgress;
 
+	@Column(name = "superset_group")
+	private @Nullable Integer supersetGroup;
+
 	@OneToMany(mappedBy = "workoutExercise", cascade = CascadeType.ALL, orphanRemoval = true)
 	@OrderBy("setNumber")
 	private List<WorkoutSet> sets = new ArrayList<>();
@@ -100,6 +103,20 @@ public class WorkoutExercise {
 		return this.autoProgress;
 	}
 
+	/** Exercises in a workout with the same group are a superset. */
+	public @Nullable Integer getSupersetGroup() {
+		return this.supersetGroup;
+	}
+
+	void supersetGroup(@Nullable Integer group) {
+		this.supersetGroup = group;
+	}
+
+	/** The sets that count: everything but warm-ups. */
+	public List<WorkoutSet> getWorkingSets() {
+		return this.sets.stream().filter((s) -> !s.isWarmup()).toList();
+	}
+
 	void rest(@Nullable Integer restSeconds) {
 		this.restSeconds = restSeconds;
 	}
@@ -118,12 +135,12 @@ public class WorkoutExercise {
 		return this.sets.stream().filter((s) -> s.getId() == setId).findFirst();
 	}
 
-	WorkoutSet logSet(double weightKg, int reps, Instant at) {
+	WorkoutSet logSet(double weightKg, int reps, boolean warmup, Instant at) {
 		int next = this.sets.stream().mapToInt(WorkoutSet::getSetNumber).max().orElse(0) + 1;
-		WorkoutSet set = new WorkoutSet(this, next, weightKg, reps, at);
+		WorkoutSet set = new WorkoutSet(this, next, weightKg, reps, warmup, at);
 		this.sets.add(set);
 		// Logging past the plan extends it, so progress never shows more than 100%.
-		this.targetSets = Math.max(this.targetSets, next);
+		this.targetSets = Math.max(this.targetSets, getWorkingSets().size());
 		return set;
 	}
 

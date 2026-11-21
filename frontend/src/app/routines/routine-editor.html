@@ -78,7 +78,12 @@
               [attr.aria-expanded]="open() === i"
               (click)="toggle(i)"
             >
-              <span class="ex-name">{{ e.name }}</span>
+              <span class="ex-name">
+                {{ e.name }}
+                @if (e.linkNext || (i > 0 && exercises()[i - 1].linkNext)) {
+                  <span class="ss">Superset</span>
+                }
+              </span>
               <span class="sub">{{ e.sets }} × {{ e.reps }} · {{ formatRest(e.restSeconds) }}</span>
             </button>
           </div>
@@ -138,6 +143,26 @@
                   <span></span>
                 </button>
               </div>
+              @if (!last) {
+                <div class="auto">
+                  <div class="what">
+                    <span class="auto-title" [id]="'link-' + i">Superset with next</span>
+                    <span class="sub"
+                      >Go straight to {{ exercises()[i + 1].name }}, rest after both</span
+                    >
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    class="switch"
+                    [attr.aria-checked]="!!e.linkNext"
+                    [attr.aria-labelledby]="'link-' + i"
+                    (click)="toggleLink(i)"
+                  >
+                    <span></span>
+                  </button>
+                </div>
+              }
               <button type="button" class="remove" (click)="remove(i)">Remove {{ e.name }}</button>
             </div>
           }

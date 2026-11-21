@@ -19,7 +19,8 @@ interface WorkoutRepository extends JpaRepository<Workout, Long> {
 	 */
 	@Query("""
 			select we from WorkoutExercise we
-			where we.exercise.id = :exerciseId and we.workout.id <> :excludeWorkoutId and size(we.sets) > 0
+			where we.exercise.id = :exerciseId and we.workout.id <> :excludeWorkoutId
+				and exists (select 1 from WorkoutSet s where s.workoutExercise = we and s.warmup = false)
 			order by we.workout.startedAt desc, we.id desc
 			""")
 	List<WorkoutExercise> findPreviousExercise(long exerciseId, long excludeWorkoutId, Limit limit);

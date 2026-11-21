@@ -18,6 +18,7 @@ const ROUTINE = {
       reps: 5,
       restSeconds: 150,
       autoProgress: true,
+      supersetGroup: null,
     },
     {
       id: 2,
@@ -27,6 +28,7 @@ const ROUTINE = {
       reps: 8,
       restSeconds: 120,
       autoProgress: false,
+      supersetGroup: null,
     },
   ],
 };
@@ -64,8 +66,22 @@ describe('RoutineEditor', () => {
     expect(req.request.body).toEqual({
       name: 'Push A',
       exercises: [
-        { exerciseId: 13, sets: 3, reps: 8, restSeconds: 120, autoProgress: false },
-        { exerciseId: 1, sets: 6, reps: 5, restSeconds: 135, autoProgress: true },
+        {
+          exerciseId: 13,
+          sets: 3,
+          reps: 8,
+          restSeconds: 120,
+          autoProgress: false,
+          supersetGroup: null,
+        },
+        {
+          exerciseId: 1,
+          sets: 6,
+          reps: 5,
+          restSeconds: 135,
+          autoProgress: true,
+          supersetGroup: null,
+        },
       ],
     });
     req.flush(ROUTINE);
@@ -109,8 +125,22 @@ describe('RoutineEditor', () => {
     save().click();
     const req = http.expectOne({ method: 'POST', url: '/api/routines' });
     expect(req.request.body.exercises).toEqual([
-      { exerciseId: 17, sets: 3, reps: 8, restSeconds: 120, autoProgress: false },
-      { exerciseId: 22, sets: 3, reps: 8, restSeconds: 120, autoProgress: false },
+      {
+        exerciseId: 17,
+        sets: 3,
+        reps: 8,
+        restSeconds: 120,
+        autoProgress: false,
+        supersetGroup: null,
+      },
+      {
+        exerciseId: 22,
+        sets: 3,
+        reps: 8,
+        restSeconds: 120,
+        autoProgress: false,
+        supersetGroup: null,
+      },
     ]);
   });
 });

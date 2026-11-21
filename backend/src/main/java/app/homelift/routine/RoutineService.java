@@ -76,7 +76,7 @@ public class RoutineService {
 				routine.getExercises()
 					.stream()
 					.map((e) -> new PlannedExercise(e.getExercise().getId(), e.getSets(), e.getReps(),
-							e.getRestSeconds(), e.isAutoProgress()))
+							e.getRestSeconds(), e.isAutoProgress(), e.getSupersetGroup()))
 					.toList());
 		return workout.getId();
 	}
@@ -85,7 +85,7 @@ public class RoutineService {
 		return input.exercises()
 			.stream()
 			.map((e) -> new RoutineExercise(this.exercises.get(e.exerciseId()), e.sets(), e.reps(), e.restSeconds(),
-					e.autoProgress()))
+					e.autoProgress(), e.supersetGroup()))
 			.toList();
 	}
 

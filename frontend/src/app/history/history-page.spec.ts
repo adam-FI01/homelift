@@ -48,6 +48,7 @@ describe('HistoryPage', () => {
         muscleGroup: 'CHEST',
         equipment: 'BARBELL',
         restSeconds: null,
+        notes: null,
         archived: false,
       },
       {
@@ -56,6 +57,7 @@ describe('HistoryPage', () => {
         muscleGroup: 'ARMS',
         equipment: 'BODYWEIGHT',
         restSeconds: null,
+        notes: null,
         archived: false,
       },
     ]);
@@ -81,6 +83,7 @@ describe('HistoryPage', () => {
       id: 3,
       name: 'Push',
       routineId: null,
+      notes: null,
       startedAt: WORKOUTS[0].startedAt,
       finishedAt: WORKOUTS[0].finishedAt,
       exercises: [
@@ -94,10 +97,12 @@ describe('HistoryPage', () => {
           targetReps: null,
           restSeconds: null,
           autoProgress: false,
+          supersetGroup: null,
+          notes: null,
           lastTime: [],
           sets: [
-            { id: 1, setNumber: 1, weightKg: 80, reps: 5 },
-            { id: 2, setNumber: 2, weightKg: 80, reps: 4 },
+            { id: 1, setNumber: 1, weightKg: 80, reps: 5, warmup: false },
+            { id: 2, setNumber: 2, weightKg: 80, reps: 4, warmup: false },
           ],
         },
       ],

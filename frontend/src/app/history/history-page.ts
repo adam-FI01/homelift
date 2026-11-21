@@ -8,7 +8,7 @@ import { SettingsService } from '../settings/settings.service';
 import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
-import { Workout, formatDuration } from '../workout/workout';
+import { Workout, formatDuration, workingSets } from '../workout/workout';
 import { WorkoutService } from '../workout/workout.service';
 import { WorkoutSummary, describeSets } from './history';
 import { HistoryService } from './history.service';
@@ -111,23 +111,38 @@ export class HistoryPage {
   protected readonly detailSummary = computed(() => {
     const w = this.detail();
     if (!w) return null;
-    const sets = w.exercises.flatMap((e) => e.sets);
+    const sets = w.exercises.flatMap(workingSets);
     return {
       sets: sets.length,
       volumeKg: sets.reduce((kg, s) => kg + s.weightKg * s.reps, 0),
       duration: this.duration(w.startedAt, w.finishedAt),
       exercises: w.exercises
-        .filter((e) => e.sets.length > 0)
+        .filter((e) => workingSets(e).length > 0)
         .map((e) => ({
           id: e.exerciseId,
           name: e.name,
-          sets: describeSets(e.sets, this.settings.unitLabel(), (kg) => this.settings.display(kg)),
+          sets: describeSets(workingSets(e), this.settings.unitLabel(), (kg) =>
+            this.settings.display(kg),
+          ),
         })),
     };
   });
 
+  protected readonly notesDraft = signal('');
+
   protected open(w: WorkoutSummary): void {
-    this.workouts.get(w.id).subscribe((full) => this.detail.set(full));
+    this.workouts.get(w.id).subscribe((full) => {
+      this.notesDraft.set(full.notes ?? '');
+      this.detail.set(full);
+    });
+  }
+
+  protected saveNotes(): void {
+    const w = this.detail();
+    if (!w) return;
+    this.workouts
+      .saveNotes(w.id, this.notesDraft().trim())
+      .subscribe((updated) => this.detail.set(updated));
   }
 
   protected async remove(): Promise<void> {

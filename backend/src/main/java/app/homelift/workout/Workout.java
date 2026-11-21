@@ -34,6 +34,8 @@ public class Workout {
 	@Column(name = "finished_at")
 	private @Nullable Instant finishedAt;
 
+	private @Nullable String notes;
+
 	@Column(name = "routine_id")
 	private @Nullable Long routineId;
 
@@ -63,6 +65,14 @@ public class Workout {
 
 	public @Nullable Instant getFinishedAt() {
 		return this.finishedAt;
+	}
+
+	public @Nullable String getNotes() {
+		return this.notes;
+	}
+
+	void notes(@Nullable String notes) {
+		this.notes = notes;
 	}
 
 	/** The routine this workout was started from, if any. */

@@ -193,3 +193,10 @@ a.row svg {
   font-size: 14px;
   padding: 8px;
 }
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--sub);
+}

@@ -32,11 +32,22 @@ export class WorkoutService {
     return this.http.delete<Workout>(`${BASE}/${workoutId}/exercises/${workoutExerciseId}`);
   }
 
-  logSet(workoutId: number, workoutExerciseId: number, weightKg: number, reps: number) {
+  logSet(
+    workoutId: number,
+    workoutExerciseId: number,
+    weightKg: number,
+    reps: number,
+    warmup = false,
+  ) {
     return this.http.post<LoggedSet>(`${BASE}/${workoutId}/exercises/${workoutExerciseId}/sets`, {
       weightKg,
       reps,
+      warmup,
     });
+  }
+
+  saveNotes(workoutId: number, notes: string) {
+    return this.http.put<Workout>(`${BASE}/${workoutId}/notes`, { notes });
   }
 
   updateSet(
@@ -45,13 +56,11 @@ export class WorkoutService {
     setId: number,
     weightKg: number,
     reps: number,
+    warmup = false,
   ) {
     return this.http.put<LoggedSet>(
       `${BASE}/${workoutId}/exercises/${workoutExerciseId}/sets/${setId}`,
-      {
-        weightKg,
-        reps,
-      },
+      { weightKg, reps, warmup },
     );
   }
 

@@ -67,6 +67,19 @@ import { ExerciseService, problemMessage } from './exercise.service';
           </div>
         </fieldset>
 
+        <label class="field">
+          <span>Notes</span>
+          <textarea
+            class="field"
+            name="notes"
+            rows="2"
+            maxlength="500"
+            placeholder="Set-up cues, like seat height or grip"
+            [value]="notes()"
+            (input)="notes.set($any($event.target).value)"
+          ></textarea>
+        </label>
+
         <fieldset>
           <legend>Rest between sets</legend>
           <div class="rest">
@@ -260,6 +273,7 @@ export class ExerciseForm implements OnInit {
   protected readonly equipment = signal<Equipment | null>(null);
   /** This exercise's own rest in seconds, or null to follow the default. */
   protected readonly rest = signal<number | null>(null);
+  protected readonly notes = signal('');
   protected readonly defaultRest = computed(() => this.settings.settings().defaultRestSeconds);
   protected readonly format = formatDuration;
   protected readonly archived = signal(false);
@@ -289,7 +303,13 @@ export class ExerciseForm implements OnInit {
     const equipment = this.equipment();
     if (!this.canSave() || !muscleGroup || !equipment) return;
 
-    const input = { name: this.name().trim(), muscleGroup, equipment, restSeconds: this.rest() };
+    const input = {
+      name: this.name().trim(),
+      muscleGroup,
+      equipment,
+      restSeconds: this.rest(),
+      notes: this.notes().trim() || null,
+    };
     const id = this.id();
     this.run(id ? this.api.update(id, input) : this.api.create(input), () =>
       this.router.navigate(['/exercises']),
@@ -329,6 +349,7 @@ export class ExerciseForm implements OnInit {
     this.muscleGroup.set(e.muscleGroup);
     this.equipment.set(e.equipment);
     this.rest.set(e.restSeconds ?? null);
+    this.notes.set(e.notes ?? '');
     this.archived.set(e.archived);
   }
 }

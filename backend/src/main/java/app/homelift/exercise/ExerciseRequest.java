@@ -9,9 +9,15 @@ import org.jspecify.annotations.Nullable;
 
 /** Body for creating or updating an exercise. */
 record ExerciseRequest(@NotBlank @Size(max = 80) String name, @NotNull MuscleGroup muscleGroup,
-		@NotNull Equipment equipment, @Nullable @Min(0) @Max(900) Integer restSeconds) {
+		@NotNull Equipment equipment, @Nullable @Min(0) @Max(900) Integer restSeconds,
+		@Nullable @Size(max = 500) String notes) {
 
 	/** The name with surrounding and repeated whitespace removed. */
+	/** Notes with surrounding whitespace removed, or null when empty. */
+	@Nullable String cleanNotes() {
+		return (this.notes == null || this.notes.isBlank()) ? null : this.notes.strip();
+	}
+
 	String cleanName() {
 		return this.name.strip().replaceAll("\\s+", " ");
 	}

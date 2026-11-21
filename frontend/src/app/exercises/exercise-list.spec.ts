@@ -12,6 +12,7 @@ const EXERCISES: Exercise[] = [
     muscleGroup: 'CHEST',
     equipment: 'BARBELL',
     restSeconds: null,
+    notes: null,
     archived: false,
   },
   {
@@ -20,6 +21,7 @@ const EXERCISES: Exercise[] = [
     muscleGroup: 'LEGS',
     equipment: 'BARBELL',
     restSeconds: null,
+    notes: null,
     archived: false,
   },
   {
@@ -28,6 +30,7 @@ const EXERCISES: Exercise[] = [
     muscleGroup: 'LEGS',
     equipment: 'MACHINE',
     restSeconds: null,
+    notes: null,
     archived: false,
   },
   {
@@ -36,6 +39,7 @@ const EXERCISES: Exercise[] = [
     muscleGroup: 'CHEST',
     equipment: 'MACHINE',
     restSeconds: null,
+    notes: null,
     archived: true,
   },
 ];

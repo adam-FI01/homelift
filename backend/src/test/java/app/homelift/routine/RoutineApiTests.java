@@ -78,6 +78,16 @@ class RoutineApiTests {
 	}
 
 	@Test
+	void carriesSupersetsIntoTheWorkout() throws Exception {
+		String curl = ex("Barbell Curl", 3, 10, 60, false).replace("}", ",\"supersetGroup\":1}");
+		String pushdown = ex("Triceps Pushdown", 3, 12, 60, false).replace("}", ",\"supersetGroup\":1}");
+		long id = id(save(null, "Arms", curl, pushdown, ex("Plank", 1, 1, 0, false)));
+		String workout = this.mvc.post().uri("/api/routines/{id}/start", id).exchange().getResponse()
+			.getContentAsString();
+		assertThat(JsonPath.<List<Integer>>read(workout, "$.exercises[*].supersetGroup")).containsExactly(1, 1, null);
+	}
+
+	@Test
 	void deletesARoutineButKeepsItsWorkouts() throws Exception {
 		long id = id(save(null, "Temp", ex("Plank", 1, 1, 0, false)));
 		String workout = this.mvc.post().uri("/api/routines/{id}/start", id).exchange().getResponse().getContentAsString();

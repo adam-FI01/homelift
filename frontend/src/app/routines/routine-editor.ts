@@ -7,7 +7,7 @@ import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from '../workout/exercise-picker';
 import { formatDuration } from '../workout/workout';
-import { DEFAULT_PLAN, RoutineExercise } from './routine';
+import { DEFAULT_PLAN, RoutineExercise, supersetGroups, withLinks } from './routine';
 import { RoutineService } from './routine.service';
 
 type Field = 'sets' | 'reps' | 'restSeconds';
@@ -71,7 +71,7 @@ export class RoutineEditor implements OnInit {
     this.api.get(id).subscribe({
       next: (r) => {
         this.name.set(r.name);
-        this.exercises.set(r.exercises);
+        this.exercises.set(withLinks(r.exercises));
       },
       error: () => this.loadFailed.set(true),
     });
@@ -104,6 +104,10 @@ export class RoutineEditor implements OnInit {
     return direction < 0 ? value <= LIMITS[field].min : value >= LIMITS[field].max;
   }
 
+  protected toggleLink(index: number): void {
+    this.patch(index, { linkNext: !this.exercises()[index].linkNext });
+  }
+
   protected toggleAuto(index: number): void {
     this.patch(index, { autoProgress: !this.exercises()[index].autoProgress });
   }
@@ -132,14 +136,17 @@ export class RoutineEditor implements OnInit {
     if (!this.canSave()) return;
     this.saving.set(true);
     this.error.set(null);
+    const list = this.exercises();
+    const groups = supersetGroups(list);
     const input = {
       name: this.name().trim(),
-      exercises: this.exercises().map(({ exerciseId, sets, reps, restSeconds, autoProgress }) => ({
+      exercises: list.map(({ exerciseId, sets, reps, restSeconds, autoProgress }, i) => ({
         exerciseId,
         sets,
         reps,
         restSeconds,
         autoProgress,
+        supersetGroup: groups[i],
       })),
     };
     this.api.save(this.id(), input).subscribe({

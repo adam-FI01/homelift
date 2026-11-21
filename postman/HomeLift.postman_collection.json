@@ -509,6 +509,53 @@
           ]
         },
         {
+          "name": "Log warm-up set",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workouts/{{workoutId}}/exercises/{{workoutExerciseId}}/sets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workouts",
+                "{{workoutId}}",
+                "exercises",
+                "{{workoutExerciseId}}",
+                "sets"
+              ]
+            },
+            "description": "Warm-ups are kept in the log but left out of volume, records, stats and \"last time\".",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weightKg\": 40,\n  \"reps\": 8,\n  \"warmup\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Get workout",
           "request": {
             "method": "GET",
@@ -699,6 +746,51 @@
           ]
         },
         {
+          "name": "Workout notes",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/workouts/{{workoutId}}/notes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "workouts",
+                "{{workoutId}}",
+                "notes"
+              ]
+            },
+            "description": "Works during and after a workout. Empty notes clear them.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Felt strong today.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Recent workouts",
           "request": {
             "method": "GET",
@@ -828,7 +920,7 @@
                 "routines"
               ]
             },
-            "description": "Names are unique ignoring case. Saves {{routineId}}.",
+            "description": "Names are unique ignoring case. Saves {{routineId}}. Exercises with the same supersetGroup (1, 2, \u2026) are a superset.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Postman Push\",\n  \"exercises\": [\n    {\n      \"exerciseId\": {{exerciseId}},\n      \"sets\": 5,\n      \"reps\": 5,\n      \"restSeconds\": 150,\n      \"autoProgress\": true\n    }\n  ]\n}",

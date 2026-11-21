@@ -37,7 +37,7 @@ class ExerciseHistoryApiTests {
 		// An unfinished workout is not history yet.
 		Workout open = this.workouts.start(null);
 		WorkoutExercise we = this.workouts.addExercise(open.getId(), bench, null);
-		this.workouts.logSet(open.getId(), we.getId(), 200, 1);
+		this.workouts.logSet(open.getId(), we.getId(), 200, 1, false);
 
 		String body = this.mvc.get().uri("/api/exercises/{id}/history", bench).exchange().getResponse()
 			.getContentAsString();
@@ -69,7 +69,7 @@ class ExerciseHistoryApiTests {
 		Workout w = this.workouts.start(null);
 		WorkoutExercise we = this.workouts.addExercise(w.getId(), exerciseId, null);
 		for (double[] s : sets) {
-			this.workouts.logSet(w.getId(), we.getId(), s[0], (int) s[1]);
+			this.workouts.logSet(w.getId(), we.getId(), s[0], (int) s[1], false);
 		}
 		this.workouts.finish(w.getId());
 	}

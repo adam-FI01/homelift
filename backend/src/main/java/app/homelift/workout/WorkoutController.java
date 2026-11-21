@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import app.homelift.workout.WorkoutDtos.AddExercise;
 import app.homelift.workout.WorkoutDtos.LogSet;
+import app.homelift.workout.WorkoutDtos.Notes;
 import app.homelift.workout.WorkoutDtos.SetView;
 import app.homelift.workout.WorkoutDtos.StartWorkout;
 import app.homelift.workout.WorkoutDtos.WorkoutSummary;
@@ -76,14 +77,14 @@ class WorkoutController {
 	@PostMapping("/{id}/exercises/{workoutExerciseId}/sets")
 	ResponseEntity<SetView> logSet(@PathVariable long id, @PathVariable long workoutExerciseId,
 			@Valid @RequestBody LogSet body) {
-		WorkoutSet set = this.service.logSet(id, workoutExerciseId, body.weightKg(), body.reps());
+		WorkoutSet set = this.service.logSet(id, workoutExerciseId, body.weightKg(), body.reps(), body.isWarmup());
 		return ResponseEntity.status(201).body(SetView.of(set));
 	}
 
 	@PutMapping("/{id}/exercises/{workoutExerciseId}/sets/{setId}")
 	SetView updateSet(@PathVariable long id, @PathVariable long workoutExerciseId, @PathVariable long setId,
 			@Valid @RequestBody LogSet body) {
-		return SetView.of(this.service.updateSet(id, workoutExerciseId, setId, body.weightKg(), body.reps()));
+		return SetView.of(this.service.updateSet(id, workoutExerciseId, setId, body.weightKg(), body.reps(), body.isWarmup()));
 	}
 
 	@DeleteMapping("/{id}/exercises/{workoutExerciseId}/sets/{setId}")
@@ -91,6 +92,12 @@ class WorkoutController {
 			@PathVariable long setId) {
 		this.service.removeSet(id, workoutExerciseId, setId);
 		return ResponseEntity.noContent().build();
+	}
+
+	@PutMapping("/{id}/notes")
+	WorkoutView notes(@PathVariable long id, @Valid @RequestBody Notes body) {
+		this.service.notes(id, body.notes());
+		return this.service.view(id);
 	}
 
 	@PostMapping("/{id}/finish")

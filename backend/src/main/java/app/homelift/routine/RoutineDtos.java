@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.jspecify.annotations.Nullable;
 
 /** Request and response bodies for the routine API. */
 final class RoutineDtos {
@@ -19,7 +20,7 @@ final class RoutineDtos {
 	}
 
 	record ExerciseInput(@NotNull Long exerciseId, @Min(1) @Max(20) int sets, @Min(1) @Max(100) int reps,
-			@Min(0) @Max(900) int restSeconds, boolean autoProgress) {
+			@Min(0) @Max(900) int restSeconds, boolean autoProgress, @Nullable @Min(1) @Max(30) Integer supersetGroup) {
 
 	}
 
@@ -32,11 +33,11 @@ final class RoutineDtos {
 	}
 
 	record ExerciseView(long id, long exerciseId, String name, int sets, int reps, int restSeconds,
-			boolean autoProgress) {
+			boolean autoProgress, @Nullable Integer supersetGroup) {
 
 		static ExerciseView of(RoutineExercise e) {
 			return new ExerciseView(e.getId(), e.getExercise().getId(), e.getExercise().getName(), e.getSets(),
-					e.getReps(), e.getRestSeconds(), e.isAutoProgress());
+					e.getReps(), e.getRestSeconds(), e.isAutoProgress(), e.getSupersetGroup());
 		}
 
 	}
