@@ -16,6 +16,9 @@ describe('SettingsPage', () => {
     const fixture = TestBed.createComponent(SettingsPage);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
+    http
+      .expectOne('/api/auth')
+      .flush({ enabled: false, unlocked: true, managedByEnvironment: false });
     http.expectOne('/api/status').flush({
       version: '0.1.0',
       sqliteVersion: '3.54.1',
@@ -74,5 +77,32 @@ describe('SettingsPage', () => {
     expect(el.textContent).toContain('up 1d 2h');
     expect(el.textContent).toContain('2.5 MB · SQLite 3.54.1');
     expect(el.textContent).toContain('61 workouts · 1058 sets');
+  });
+
+  it('sets a PIN after typing it twice', async () => {
+    const { fixture, http, el } = await setup();
+    (el.querySelector('[aria-labelledby="pin-label"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    const inputs = [
+      ...el.querySelectorAll('input[autocomplete="new-password"]'),
+    ] as HTMLInputElement[];
+    const type = (i: HTMLInputElement, v: string) => {
+      i.value = v;
+      i.dispatchEvent(new Event('input'));
+    };
+    const save = () =>
+      [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Save PIN')!;
+
+    type(inputs[0], '2468');
+    type(inputs[1], '2469');
+    save().click();
+    await fixture.whenStable();
+    expect(el.textContent).toContain("don't match");
+
+    type(inputs[1], '2468');
+    save().click();
+    expect(http.expectOne({ method: 'PUT', url: '/api/auth/pin' }).request.body).toEqual({
+      pin: '2468',
+    });
   });
 });

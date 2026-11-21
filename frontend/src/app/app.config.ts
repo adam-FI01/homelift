@@ -4,7 +4,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import {
   PreloadAllModules,
   provideRouter,
@@ -12,6 +12,7 @@ import {
   withPreloading,
 } from '@angular/router';
 import { routes } from './app.routes';
+import { lockedInterceptor } from './auth/locked.interceptor';
 import { SettingsService } from './settings/settings.service';
 
 export const appConfig: ApplicationConfig = {
@@ -19,7 +20,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     // Pages are lazy-loaded, then all fetched in the background so switching tabs never waits.
     provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([lockedInterceptor])),
     // Fetch settings in the background; the cached copy is used until they arrive.
     provideAppInitializer(() => inject(SettingsService).load()),
   ],

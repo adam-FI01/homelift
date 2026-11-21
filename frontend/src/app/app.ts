@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -13,11 +13,11 @@ import { RestTimerMini } from './workout/rest-timer-mini';
     <main class="content">
       <router-outlet />
     </main>
-    @if (!onWorkout()) {
+    @if (!onWorkout() && !onLock()) {
       <app-rest-timer-mini class="mini" />
     }
     <app-confirm-host />
-    <nav class="tabs" aria-label="Main">
+    <nav class="tabs" aria-label="Main" [hidden]="onLock()">
       <a
         routerLink="/"
         routerLinkActive="on"
@@ -143,12 +143,16 @@ import { RestTimerMini } from './workout/rest-timer-mini';
 export class App {
   private readonly router = inject(Router);
 
-  /** The workout page shows the full timer, so the mini one hides there. */
-  protected readonly onWorkout = toSignal(
+  private readonly url = toSignal(
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd),
-      map((e) => (e as NavigationEnd).urlAfterRedirects.startsWith('/workout')),
+      map((e) => (e as NavigationEnd).urlAfterRedirects),
     ),
-    { initialValue: false },
+    { initialValue: '' },
   );
+
+  /** The workout page shows the full timer, so the mini one hides there. */
+  protected readonly onWorkout = computed(() => this.url().startsWith('/workout'));
+  /** The lock screen stands alone, without tabs. */
+  protected readonly onLock = computed(() => this.url().startsWith('/unlock'));
 }

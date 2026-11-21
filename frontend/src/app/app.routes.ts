@@ -59,6 +59,11 @@ export const routes: Routes = [
   },
   { path: 'data', redirectTo: 'settings' },
   {
+    path: 'unlock',
+    loadComponent: () => import('./auth/unlock-page').then((m) => m.UnlockPage),
+    title: 'Locked · HomeLift',
+  },
+  {
     path: 'body',
     loadComponent: () => import('./body/body-page').then((m) => m.BodyPage),
     title: 'Body · HomeLift',

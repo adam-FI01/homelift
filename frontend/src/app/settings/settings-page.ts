@@ -1,7 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../auth/auth.service';
+import { problemMessage } from '../exercises/exercise.service';
+import { Sheet } from '../shared/sheet';
 import { catchError, of } from 'rxjs';
 import { formatDuration } from '../workout/workout';
 import { Settings, Theme, Units } from './settings';
@@ -22,7 +25,7 @@ type Toggle = 'autoStartRest' | 'restSound' | 'restVibrate';
 /** Rest timer, units, theme, and your data. Every change saves straight away. */
 @Component({
   selector: 'app-settings-page',
-  imports: [RouterLink],
+  imports: [RouterLink, Sheet],
   templateUrl: './settings-page.html',
   styleUrl: './settings-page.scss',
 })
@@ -82,6 +85,55 @@ export class SettingsPage {
     return bytes >= 1_048_576
       ? `${(bytes / 1_048_576).toFixed(1)} MB`
       : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  }
+
+  protected readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  /** Which PIN sheet is open, and its fields. */
+  protected readonly pinSheet = signal<'set' | 'change' | 'remove' | null>(null);
+  protected readonly currentPin = signal('');
+  protected readonly newPin = signal('');
+  protected readonly confirmPin = signal('');
+  protected readonly pinError = signal<string | null>(null);
+
+  constructor() {
+    this.auth.refresh().subscribe({ error: () => undefined });
+  }
+
+  protected openPin(kind: 'set' | 'change' | 'remove'): void {
+    this.currentPin.set('');
+    this.newPin.set('');
+    this.confirmPin.set('');
+    this.pinError.set(null);
+    this.pinSheet.set(kind);
+  }
+
+  protected savePin(): void {
+    const kind = this.pinSheet();
+    if (kind === 'remove') {
+      this.auth.removePin(this.currentPin()).subscribe({
+        next: () => this.pinSheet.set(null),
+        error: (e: unknown) => this.pinError.set(problemMessage(e)),
+      });
+      return;
+    }
+    if (!/^\d{4,12}$/.test(this.newPin())) {
+      this.pinError.set('Use 4 to 12 digits.');
+      return;
+    }
+    if (this.newPin() !== this.confirmPin()) {
+      this.pinError.set("The two PINs don't match.");
+      return;
+    }
+    this.auth.setPin(this.newPin(), kind === 'change' ? this.currentPin() : undefined).subscribe({
+      next: () => this.pinSheet.set(null),
+      error: (e: unknown) => this.pinError.set(problemMessage(e)),
+    });
+  }
+
+  protected lockNow(): void {
+    this.auth.lock().subscribe(() => this.router.navigate(['/unlock']));
   }
 
   protected set(change: Partial<Settings>): void {

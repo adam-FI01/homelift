@@ -97,6 +97,106 @@
   </div>
 </section>
 
+<section class="group" aria-labelledby="security-title">
+  <h2 id="security-title">Security</h2>
+  <div class="card list">
+    @if (auth.state(); as a) {
+      @if (a.managedByEnvironment) {
+        <div class="row">
+          <div class="what">
+            <span class="name">PIN required</span>
+            <span class="sub">Set by the server with HOMELIFT_PIN</span>
+          </div>
+          <button type="button" class="pill" (click)="lockNow()">Lock now</button>
+        </div>
+      } @else {
+        <div class="row">
+          <div class="what">
+            <span class="name" id="pin-label">Require a PIN</span>
+            <span class="sub">Ask for a PIN on each device every 30 days</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="switch"
+            aria-labelledby="pin-label"
+            [attr.aria-checked]="a.enabled"
+            (click)="openPin(a.enabled ? 'remove' : 'set')"
+          >
+            <span></span>
+          </button>
+        </div>
+        @if (a.enabled) {
+          <div class="row">
+            <button type="button" class="text" (click)="openPin('change')">Change PIN</button>
+            <button type="button" class="pill" (click)="lockNow()">Lock now</button>
+          </div>
+        }
+      }
+    } @else {
+      <div class="row"><span class="sub">Checking…</span></div>
+    }
+  </div>
+</section>
+
+<app-sheet
+  [title]="
+    pinSheet() === 'remove'
+      ? 'Turn off the PIN?'
+      : pinSheet() === 'change'
+        ? 'Change PIN'
+        : 'Set a PIN'
+  "
+  [open]="pinSheet() !== null"
+  (closed)="pinSheet.set(null)"
+>
+  @if (pinSheet(); as kind) {
+    @if (kind !== 'set') {
+      <label class="pin-field">
+        <span>Current PIN</span>
+        <input
+          type="password"
+          inputmode="numeric"
+          autocomplete="current-password"
+          maxlength="12"
+          [value]="currentPin()"
+          (input)="currentPin.set($any($event.target).value)"
+        />
+      </label>
+    }
+    @if (kind !== 'remove') {
+      <label class="pin-field">
+        <span>New PIN (4 to 12 digits)</span>
+        <input
+          type="password"
+          inputmode="numeric"
+          autocomplete="new-password"
+          maxlength="12"
+          [value]="newPin()"
+          (input)="newPin.set($any($event.target).value)"
+        />
+      </label>
+      <label class="pin-field">
+        <span>New PIN again</span>
+        <input
+          type="password"
+          inputmode="numeric"
+          autocomplete="new-password"
+          maxlength="12"
+          [value]="confirmPin()"
+          (input)="confirmPin.set($any($event.target).value)"
+        />
+      </label>
+    }
+    @if (pinError(); as message) {
+      <p class="pin-error" role="alert">{{ message }}</p>
+    }
+    <button type="button" class="btn-primary" (click)="savePin()">
+      {{ kind === 'remove' ? 'Turn off PIN' : 'Save PIN' }}
+    </button>
+  }
+</app-sheet>
+
 <section class="group" aria-labelledby="data-title">
   <h2 id="data-title">Your data</h2>
   <div class="card list">

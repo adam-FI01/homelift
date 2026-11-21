@@ -1328,6 +1328,173 @@
       ]
     },
     {
+      "name": "PIN lock",
+      "description": "Optional. Off unless a PIN is set in Settings or with the HOMELIFT_PIN environment variable. When on, /api calls need the session cookie from Unlock (Postman keeps cookies for you).",
+      "item": [
+        {
+          "name": "Lock state",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth"
+              ]
+            },
+            "description": "enabled, unlocked, and whether the PIN comes from the environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unlock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/unlock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "unlock"
+              ]
+            },
+            "description": "Sets an HttpOnly session cookie for 30 days. 401 for a wrong PIN, 429 after five wrong tries in a row.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pin\": \"2468\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": []
+        },
+        {
+          "name": "Set or change PIN",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin"
+              ]
+            },
+            "description": "4 to 12 digits. currentPin is needed when a PIN is already set. Ends every other session.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPin\": null,\n  \"pin\": \"2468\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": []
+        },
+        {
+          "name": "Turn off PIN",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "pin"
+              ]
+            },
+            "description": "Needs the current PIN.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pin\": \"2468\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": []
+        },
+        {
+          "name": "Lock",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/lock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "lock"
+              ]
+            },
+            "description": "Clears this browser's session cookie."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Export",
       "description": "Downloads for backups and spreadsheets. Use Send and Download in Postman.",
       "item": [

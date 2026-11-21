@@ -17,6 +17,7 @@ A self-hosted workout tracker made for a home server. HomeLift ships as one smal
 - **Stats.** A Wrapped-style recap for any day, week, month, quarter or year: volume, records, top lifts, muscle focus, streaks and habits.
 - **Body.** Log body weight, body fat and measurements; weight is charted on Stats.
 - **Settings.** Default rest with per-exercise overrides, auto-start, sound and vibration, kg or lb, and light, dark or system theme.
+- **Optional PIN.** Off by default. Turn it on in Settings or with `HOMELIFT_PIN`; each device stays unlocked for 30 days. It keeps casual hands out on a home network, and isn't a substitute for keeping the server off the open internet.
 - **Your data.** Download a full database backup, a CSV of every set, or a JSON dump at any time.
 
 ## Quick start
@@ -41,6 +42,7 @@ The database lives in `/data` inside the container. Mount a host folder or volum
 | ------------------- | ------- | ---------------------------------------- |
 | `PORT`              | `8080`  | HTTP port inside the container           |
 | `HOMELIFT_DATA_DIR` | `/data` | Folder that holds `homelift.db`          |
+| `HOMELIFT_PIN`      | unset   | Require this PIN (4 to 12 digits) to use the app; overrides the PIN in Settings |
 | `JAVA_TOOL_OPTIONS` | tuned   | JVM flags (heap is 75% of the container memory limit) |
 
 ## Architecture
@@ -142,10 +144,11 @@ Everything the UI does goes through a JSON API under `/api`. Errors use RFC 9457
 | Routines  | `GET/POST /api/routines`, `GET/PUT/DELETE /api/routines/{id}`, `POST …/{id}/start` |
 | Stats     | `GET /api/stats?period=DAY\|WEEK\|MONTH\|QUARTER\|YEAR&date=&zone=` |
 | Body      | `GET/PUT /api/body`, `DELETE /api/body/{id}` |
+| PIN lock  | `GET /api/auth`, `POST /api/auth/unlock`, `POST /api/auth/lock`, `PUT/DELETE /api/auth/pin` |
 | Settings  | `GET/PUT /api/settings` |
 | Export    | `GET /api/export/homelift.db`, `GET /api/export/sets.csv`, `GET /api/export/backup.json` |
 
-A [Postman](https://www.postman.com/) collection covering every endpoint (38 requests) lives in [`postman/`](postman). Import both files, pick the **HomeLift local** environment (`http://localhost:8080`), and run the folders top to bottom: requests that create things save their ids for the next ones. For your own server, duplicate the environment and change `baseUrl`.
+A [Postman](https://www.postman.com/) collection covering every endpoint (43 requests) lives in [`postman/`](postman). Import both files, pick the **HomeLift local** environment (`http://localhost:8080`), and run the folders top to bottom: requests that create things save their ids for the next ones. For your own server, duplicate the environment and change `baseUrl`.
 
 ## Branches and releases
 
