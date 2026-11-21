@@ -6,10 +6,42 @@ import { Exercise } from './exercise';
 import { ExerciseList } from './exercise-list';
 
 const EXERCISES: Exercise[] = [
-  { id: 1, name: 'Bench Press', muscleGroup: 'CHEST', equipment: 'BARBELL', archived: false },
-  { id: 2, name: 'Back Squat', muscleGroup: 'LEGS', equipment: 'BARBELL', archived: false },
-  { id: 3, name: 'Leg Press', muscleGroup: 'LEGS', equipment: 'MACHINE', archived: false },
-  { id: 4, name: 'Old Press', muscleGroup: 'CHEST', equipment: 'MACHINE', archived: true },
+  {
+    id: 1,
+    name: 'Bench Press',
+    muscleGroup: 'CHEST',
+    equipment: 'BARBELL',
+    restSeconds: null,
+    notes: null,
+    archived: false,
+  },
+  {
+    id: 2,
+    name: 'Back Squat',
+    muscleGroup: 'LEGS',
+    equipment: 'BARBELL',
+    restSeconds: null,
+    notes: null,
+    archived: false,
+  },
+  {
+    id: 3,
+    name: 'Leg Press',
+    muscleGroup: 'LEGS',
+    equipment: 'MACHINE',
+    restSeconds: null,
+    notes: null,
+    archived: false,
+  },
+  {
+    id: 4,
+    name: 'Old Press',
+    muscleGroup: 'CHEST',
+    equipment: 'MACHINE',
+    restSeconds: null,
+    notes: null,
+    archived: true,
+  },
 ];
 
 async function setup() {

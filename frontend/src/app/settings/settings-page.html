@@ -1,0 +1,306 @@
+<header class="head">
+  <a routerLink="/" class="icon" aria-label="Back to home">
+    <svg
+      aria-hidden="true"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  </a>
+  <h1>Settings</h1>
+</header>
+
+<section class="group" aria-labelledby="rest-title">
+  <h2 id="rest-title">Rest timer</h2>
+  <div class="card list">
+    <div class="row">
+      <div class="what">
+        <span class="name">Default rest</span>
+        <span class="sub">Exercises and routines can set their own</span>
+      </div>
+      <div class="pick">
+        <button
+          type="button"
+          aria-label="15 seconds less default rest"
+          [disabled]="s().defaultRestSeconds <= 15"
+          (click)="nudgeRest(-15)"
+        >
+          −
+        </button>
+        <output aria-live="polite">{{ format(s().defaultRestSeconds) }}</output>
+        <button
+          type="button"
+          aria-label="15 seconds more default rest"
+          [disabled]="s().defaultRestSeconds >= 900"
+          (click)="nudgeRest(15)"
+        >
+          +
+        </button>
+      </div>
+    </div>
+    @for (t of toggles; track t.key) {
+      <div class="row">
+        <div class="what">
+          <span class="name" [id]="t.key + '-label'">{{ t.title }}</span>
+          <span class="sub">{{ t.detail }}</span>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          class="switch"
+          [attr.aria-checked]="s()[t.key]"
+          [attr.aria-labelledby]="t.key + '-label'"
+          (click)="toggle(t.key)"
+        >
+          <span></span>
+        </button>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="group" aria-labelledby="units-title">
+  <h2 id="units-title">Units</h2>
+  <div class="segments" role="radiogroup" aria-labelledby="units-title">
+    @for (o of unitOptions; track o.value) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="s().units === o.value"
+        (click)="set({ units: o.value })"
+      >
+        {{ o.label }}
+      </button>
+    }
+  </div>
+  <p class="note">Weights are stored in kg, so you can switch back and forth freely.</p>
+</section>
+
+<section class="group" aria-labelledby="theme-title">
+  <h2 id="theme-title">Appearance</h2>
+  <div class="segments" role="radiogroup" aria-labelledby="theme-title">
+    @for (o of themeOptions; track o.value) {
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="s().theme === o.value"
+        (click)="set({ theme: o.value })"
+      >
+        {{ o.label }}
+      </button>
+    }
+  </div>
+</section>
+
+<section class="group" aria-labelledby="security-title">
+  <h2 id="security-title">Security</h2>
+  <div class="card list">
+    @if (auth.state(); as a) {
+      @if (a.managedByEnvironment) {
+        <div class="row">
+          <div class="what">
+            <span class="name">PIN required</span>
+            <span class="sub">Set by the server with HOMELIFT_PIN</span>
+          </div>
+          <button type="button" class="pill" (click)="lockNow()">Lock now</button>
+        </div>
+      } @else {
+        <div class="row">
+          <div class="what">
+            <span class="name" id="pin-label">Require a PIN</span>
+            <span class="sub">Ask for a PIN on each device every 30 days</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="switch"
+            aria-labelledby="pin-label"
+            [attr.aria-checked]="a.enabled"
+            (click)="openPin(a.enabled ? 'remove' : 'set')"
+          >
+            <span></span>
+          </button>
+        </div>
+        @if (a.enabled) {
+          <div class="row">
+            <button type="button" class="text" (click)="openPin('change')">Change PIN</button>
+            <button type="button" class="pill" (click)="lockNow()">Lock now</button>
+          </div>
+        }
+      }
+    } @else {
+      <div class="row"><span class="sub">Checking…</span></div>
+    }
+  </div>
+</section>
+
+<app-sheet
+  [title]="
+    pinSheet() === 'remove'
+      ? 'Turn off the PIN?'
+      : pinSheet() === 'change'
+        ? 'Change PIN'
+        : 'Set a PIN'
+  "
+  [open]="pinSheet() !== null"
+  (closed)="pinSheet.set(null)"
+>
+  @if (pinSheet(); as kind) {
+    @if (kind !== 'set') {
+      <label class="pin-field">
+        <span>Current PIN</span>
+        <input
+          type="password"
+          inputmode="numeric"
+          autocomplete="current-password"
+          maxlength="12"
+          [value]="currentPin()"
+          (input)="currentPin.set($any($event.target).value)"
+        />
+      </label>
+    }
+    @if (kind !== 'remove') {
+      <label class="pin-field">
+        <span>New PIN (4 to 12 digits)</span>
+        <input
+          type="password"
+          inputmode="numeric"
+          autocomplete="new-password"
+          maxlength="12"
+          [value]="newPin()"
+          (input)="newPin.set($any($event.target).value)"
+        />
+      </label>
+      <label class="pin-field">
+        <span>New PIN again</span>
+        <input
+          type="password"
+          inputmode="numeric"
+          autocomplete="new-password"
+          maxlength="12"
+          [value]="confirmPin()"
+          (input)="confirmPin.set($any($event.target).value)"
+        />
+      </label>
+    }
+    @if (pinError(); as message) {
+      <p class="pin-error" role="alert">{{ message }}</p>
+    }
+    <button type="button" class="btn-primary" (click)="savePin()">
+      {{ kind === 'remove' ? 'Turn off PIN' : 'Save PIN' }}
+    </button>
+  }
+</app-sheet>
+
+<section class="group" aria-labelledby="data-title">
+  <h2 id="data-title">Your data</h2>
+  <div class="card list">
+    @for (d of downloads; track d.href) {
+      <a class="row" [href]="d.href" download>
+        <div class="what">
+          <span class="name">{{ d.title }}</span>
+          <span class="sub">{{ d.detail }}</span>
+        </div>
+        <svg
+          aria-hidden="true"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+        </svg>
+      </a>
+    }
+  </div>
+  <details class="card restore">
+    <summary>Restoring a backup</summary>
+    <ol>
+      <li>Stop the HomeLift container.</li>
+      <li>
+        Replace <code>homelift.db</code> in its data folder with the backup file, renamed to
+        <code>homelift.db</code>.
+      </li>
+      <li>Start the container again.</li>
+    </ol>
+  </details>
+</section>
+
+<section class="group" aria-labelledby="about-title">
+  <h2 id="about-title">About</h2>
+  <div class="card list">
+    @if (status() === undefined) {
+      <div class="row"><span class="sub">Checking the server…</span></div>
+    } @else if (status(); as st) {
+      <div class="row">
+        <span class="name grow"><span class="dot on" aria-hidden="true"></span>Server healthy</span>
+        <span class="sub">up {{ uptime(st.uptimeSeconds) }}</span>
+      </div>
+      <dl class="facts">
+        <div>
+          <dt>Version</dt>
+          <dd>{{ st.version }}</dd>
+        </div>
+        <div>
+          <dt>Database</dt>
+          <dd>{{ size(st.databaseBytes) }} · SQLite {{ st.sqliteVersion }}</dd>
+        </div>
+        <div>
+          <dt>Logged</dt>
+          <dd>{{ st.workouts }} workouts · {{ st.sets }} sets</dd>
+        </div>
+        <div>
+          <dt>Java</dt>
+          <dd>{{ st.javaVersion }}</dd>
+        </div>
+      </dl>
+    } @else {
+      <div class="row">
+        <span class="name grow"
+          ><span class="dot off" aria-hidden="true"></span>Server unreachable</span
+        >
+      </div>
+    }
+  </div>
+</section>
+
+<section class="group" aria-labelledby="more-title">
+  <h2 id="more-title">More</h2>
+  <div class="card list">
+    <a class="row" routerLink="/body">
+      <span class="name">Body weight and measurements</span>
+      <svg
+        aria-hidden="true"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </a>
+    <a class="row" routerLink="/exercises">
+      <span class="name">Exercise library</span>
+      <svg
+        aria-hidden="true"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </a>
+  </div>
+</section>

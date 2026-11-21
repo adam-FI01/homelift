@@ -1,0 +1,111 @@
+<header class="head">
+  <a routerLink="/stats" class="icon" aria-label="Back to stats">
+    <svg
+      aria-hidden="true"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  </a>
+  <h1>Body</h1>
+  <button type="button" class="log" (click)="startLog()">Log</button>
+</header>
+
+<nav class="chips" aria-label="Measurement">
+  @for (k of kinds; track k.kind) {
+    <button
+      type="button"
+      class="chip"
+      [class.on]="kind() === k.kind"
+      [attr.aria-pressed]="kind() === k.kind"
+      (click)="kind.set(k.kind)"
+    >
+      {{ k.label }}
+    </button>
+  }
+</nav>
+
+@if (entries() === undefined) {
+  <p class="sub">Loading…</p>
+} @else if (latest(); as l) {
+  <section class="headline">
+    <span class="sub">{{ label() }}</span>
+    <span class="big"
+      >{{ fmt(l.value) }} <span class="unit">{{ unit() }}</span></span
+    >
+    @if (l.change !== null) {
+      <span class="sub">{{ signed(l.change) }} {{ unit() }} since {{ day(l.since) }}</span>
+    }
+  </section>
+  @if (points().length > 1) {
+    <app-line-chart [points]="points()" [label]="chartLabel()" [unit]="unit()" />
+  }
+  <div class="card list">
+    @for (e of newestFirst(); track e.id) {
+      <div class="row">
+        <span class="when">{{ day(e.date) }}</span>
+        <span class="val">{{ fmt(shown(e.value)) }} {{ unit() }}</span>
+        <button
+          type="button"
+          class="del"
+          [attr.aria-label]="'Delete ' + day(e.date)"
+          (click)="remove(e)"
+        >
+          <svg
+            aria-hidden="true"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+    }
+  </div>
+} @else {
+  <section class="card empty">
+    <p>No {{ label().toLowerCase() }} entries yet.</p>
+    <button type="button" class="btn-primary" (click)="startLog()">
+      Log {{ label().toLowerCase() }}
+    </button>
+  </section>
+}
+
+<app-sheet
+  [title]="'Log ' + label().toLowerCase()"
+  [open]="logging()"
+  (closed)="logging.set(false)"
+>
+  @if (logging()) {
+    <label class="field">
+      <span>Date</span>
+      <input type="date" [value]="draftDate()" (input)="draftDate.set($any($event.target).value)" />
+    </label>
+    <label class="field">
+      <span>{{ label() }} ({{ unit() }})</span>
+      <input
+        inputmode="decimal"
+        autocomplete="off"
+        [value]="draftValue()"
+        (input)="draftValue.set($any($event.target).value)"
+      />
+    </label>
+    <button
+      type="button"
+      class="btn-primary"
+      [disabled]="!(+draftValue().replace(',', '.') > 0)"
+      (click)="save()"
+    >
+      Save
+    </button>
+  }
+</app-sheet>
