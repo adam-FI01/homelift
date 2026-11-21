@@ -128,6 +128,13 @@
         }
       </section>
 
+      @if (hint(); as h) {
+        <button type="button" class="hint" (click)="applyHint()">
+          <span class="hint-try">Try {{ h.weightKg | weight }} × {{ h.reps }}</span>
+          <span class="sub">{{ h.reason }}</span>
+        </button>
+      }
+
       <section class="steppers" [attr.aria-label]="'Set ' + nextSetNumber()">
         <app-stepper
           id="weight-label"

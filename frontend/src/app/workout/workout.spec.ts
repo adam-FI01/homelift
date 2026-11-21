@@ -5,6 +5,7 @@ import {
   formatDuration,
   formatKg,
   nextSetDefaults,
+  progressionHint,
 } from './workout';
 
 function exercise(overrides: Partial<WorkoutExercise> = {}): WorkoutExercise {
@@ -139,5 +140,49 @@ describe('afterLog', () => {
       ],
     });
     expect(nextSetDefaults(e)).toEqual({ weightKg: 80, reps: 5 });
+  });
+});
+
+describe('progressionHint', () => {
+  const last = (...reps: number[]) => reps.map((r) => ({ weightKg: 80, reps: r }));
+
+  it('suggests more weight when every planned set hit its reps', () => {
+    const hint = progressionHint(
+      exercise({ targetReps: 5, targetSets: 3, lastTime: last(5, 5, 6) }),
+    );
+    expect(hint).toEqual({ weightKg: 82.5, reps: 5, reason: 'Every set hit 5 reps last time' });
+  });
+
+  it('suggests matching last time when a set fell short', () => {
+    expect(
+      progressionHint(exercise({ targetReps: 5, targetSets: 3, lastTime: last(5, 4, 4) }))
+        ?.weightKg,
+    ).toBe(80);
+  });
+
+  it('suggests one more rep without a plan, or weight after high reps', () => {
+    expect(progressionHint(exercise({ lastTime: last(8, 8) }))).toEqual({
+      weightKg: 80,
+      reps: 9,
+      reason: 'Beat last time by one rep',
+    });
+    expect(progressionHint(exercise({ lastTime: last(12, 13) }))?.weightKg).toBe(82.5);
+  });
+
+  it('stays quiet with no history, after a set today, or when auto progression applied', () => {
+    expect(progressionHint(exercise())).toBeNull();
+    expect(
+      progressionHint(
+        exercise({
+          lastTime: last(8),
+          sets: [{ id: 1, setNumber: 1, weightKg: 80, reps: 8, warmup: false }],
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      progressionHint(
+        exercise({ targetReps: 5, targetSets: 2, autoProgress: true, lastTime: last(5, 5) }),
+      ),
+    ).toBeNull();
   });
 });

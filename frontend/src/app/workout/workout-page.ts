@@ -19,6 +19,7 @@ import {
   earnedProgression,
   formatDuration,
   nextSetDefaults,
+  progressionHint,
   supersetOf,
   workingSets,
 } from './workout';
@@ -75,6 +76,12 @@ export class WorkoutPage {
   protected readonly nextSetNumber = computed(() => {
     const ex = this.current();
     return ex ? workingSets(ex).length + 1 : 1;
+  });
+
+  /** A suggestion for the first set, from last time. */
+  protected readonly hint = computed(() => {
+    const ex = this.current();
+    return ex ? progressionHint(ex, this.settings.weightStepKg()) : null;
   });
 
   /** Names of the other exercises in the current superset, if any. */
@@ -162,6 +169,13 @@ export class WorkoutPage {
       this.index.set(updated.exercises.length - 1);
       this.picking.set(false);
     });
+  }
+
+  protected applyHint(): void {
+    const h = this.hint();
+    if (!h) return;
+    this.weight.set(this.shown(h.weightKg));
+    this.reps.set(h.reps);
   }
 
   protected logSet(): void {

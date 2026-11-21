@@ -132,3 +132,45 @@ export function afterLog(workout: Workout, index: number): { index: number; rest
   const after = members.at(-1)! + 1;
   return { index: after < workout.exercises.length ? after : index, rest: true };
 }
+
+export interface ProgressionHint {
+  /** What to try, in kg. */
+  weightKg: number;
+  reps: number;
+  /** Why, in a few words. */
+  reason: string;
+}
+
+/**
+ * A suggestion for the first working set, based on last time: add weight once every set hit its
+ * reps, otherwise match last time or beat it by a rep. Plain arithmetic, nothing clever. Not shown
+ * once you've logged a set, or when auto progression already added the weight.
+ */
+export function progressionHint(
+  exercise: WorkoutExercise,
+  stepKg = WEIGHT_STEP_KG,
+): ProgressionHint | null {
+  const last = exercise.lastTime;
+  if (last.length === 0 || workingSets(exercise).length > 0) return null;
+  const top = last[0];
+  const target = exercise.targetReps;
+  if (target !== null) {
+    if (earnedProgression(exercise)) return null; // already applied, and said so in the summary
+    const allHit = last.slice(0, exercise.targetSets).every((s) => s.reps >= target);
+    return allHit
+      ? {
+          weightKg: top.weightKg + stepKg,
+          reps: target,
+          reason: `Every set hit ${target} reps last time`,
+        }
+      : { weightKg: top.weightKg, reps: target, reason: 'Match last time and get every rep' };
+  }
+  if (last.every((s) => s.reps >= 12) && top.weightKg > 0) {
+    return {
+      weightKg: top.weightKg + stepKg,
+      reps: Math.max(top.reps - 2, 1),
+      reason: '12+ reps on every set last time',
+    };
+  }
+  return { weightKg: top.weightKg, reps: top.reps + 1, reason: 'Beat last time by one rep' };
+}

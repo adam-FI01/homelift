@@ -301,3 +301,20 @@
   font-size: 13px;
   color: var(--sub);
 }
+
+.hint {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1px dashed var(--pos);
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+}
+.hint-try {
+  font-weight: 600;
+  color: var(--pos);
+}
