@@ -44,6 +44,7 @@ The database lives in `/data` inside the container. Mount a host folder or volum
 | `HOMELIFT_DATA_DIR` | `/data` | Folder that holds `homelift.db`          |
 | `HOMELIFT_PIN`      | unset   | Require this PIN (4 to 12 digits) to use the app; overrides the PIN in Settings |
 | `JAVA_TOOL_OPTIONS` | tuned   | JVM flags (heap is 75% of the container memory limit) |
+| `LOGGING_STRUCTURED_FORMAT_CONSOLE` | `ecs` | JSON logs (`ecs`, `logstash`, `gelf`); unset for plain text |
 
 ## Architecture
 
@@ -68,6 +69,7 @@ The database lives in `/data` inside the container. Mount a host folder or volum
 Design notes:
 
 - **One deployable.** Maven builds the Angular app and copies it into the jar, and Spring forwards client-side routes to `index.html` so deep links work.
+- **Readable operations.** The image logs JSON (Elastic Common Schema) with one line per API call: method, path, status, duration and a request id that is also returned as `X-Request-Id`. Browsers get a friendly error page; the API always answers with `problem+json`.
 - **Small footprint.** One database connection (SQLite allows a single writer), Serial GC, and a capped heap keep memory at about 220 MB at idle.
 - **Fast multi-arch builds.** The frontend and the jar build once on the runner's native platform. Only the thin runtime layer is per-architecture, so arm64 builds don't emulate Maven or npm.
 - **Native-ready.** The GraalVM `native-maven-plugin` is already configured, so a native image can be added later without restructuring.

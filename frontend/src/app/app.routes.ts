@@ -68,5 +68,9 @@ export const routes: Routes = [
     loadComponent: () => import('./body/body-page').then((m) => m.BodyPage),
     title: 'Body · HomeLift',
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    loadComponent: () => import('./shared/not-found').then((m) => m.NotFound),
+    title: 'Not found · HomeLift',
+  },
 ];

@@ -1,5 +1,6 @@
 import {
   ApplicationConfig,
+  ErrorHandler,
   inject,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
@@ -13,11 +14,13 @@ import {
 } from '@angular/router';
 import { routes } from './app.routes';
 import { lockedInterceptor } from './auth/locked.interceptor';
+import { AppErrorHandler } from './shared/app-error';
 import { SettingsService } from './settings/settings.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    { provide: ErrorHandler, useExisting: AppErrorHandler },
     // Pages are lazy-loaded, then all fetched in the background so switching tabs never waits.
     provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
     provideHttpClient(withFetch(), withInterceptors([lockedInterceptor])),

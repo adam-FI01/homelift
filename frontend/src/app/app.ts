@@ -3,12 +3,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { ConfirmHost } from './shared/confirm-host';
+import { ErrorBanner } from './shared/error-banner';
 import { RestTimerMini } from './workout/rest-timer-mini';
 
 /** The app shell: the page on top and a tab bar at the bottom, as in the mockups. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RestTimerMini, ConfirmHost],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RestTimerMini, ConfirmHost, ErrorBanner],
   template: `
     <main class="content">
       <router-outlet />
@@ -17,6 +18,7 @@ import { RestTimerMini } from './workout/rest-timer-mini';
       <app-rest-timer-mini class="mini" />
     }
     <app-confirm-host />
+    <app-error-banner />
     <nav class="tabs" aria-label="Main" [hidden]="onLock()">
       <a
         routerLink="/"
