@@ -1,0 +1,189 @@
+:host {
+  display: contents;
+}
+.sub {
+  font-size: 14px;
+  color: var(--sub);
+}
+.small {
+  font-size: 13px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+}
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: -12px;
+}
+.gear {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sub);
+}
+.brand {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.volume {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0 8px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.big {
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.unit {
+  font-size: 22px;
+  color: var(--sub);
+}
+.delta {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--pos);
+}
+.delta.down {
+  color: var(--neg);
+}
+
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.next-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.next-head > .sub {
+  font-size: 13px;
+  padding-top: 2px;
+  flex: none;
+}
+.what {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.what .sub {
+  font-size: 13px;
+}
+.name {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.quiet {
+  align-self: center;
+  margin-top: -6px;
+  color: var(--sub);
+  font-size: 14px;
+  text-decoration: none;
+  padding: 4px 8px;
+}
+
+.week {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+}
+.week-head {
+  display: flex;
+  justify-content: space-between;
+}
+.label {
+  font-size: 14px;
+  font-weight: 500;
+}
+.days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.days li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.letter {
+  font-size: 12px;
+  color: var(--sub);
+}
+.today .letter {
+  color: var(--ink);
+  font-weight: 600;
+}
+.dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background: var(--soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.today .dot {
+  background: none;
+  border: 2px solid var(--ink);
+}
+.dot.done,
+.today .dot.done {
+  background: var(--btn);
+  color: var(--on-btn);
+  border: 0;
+}
+
+.records {
+  padding: 4px 18px;
+}
+.records a {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.records a + a {
+  border-top: 1px solid var(--line);
+}
+.records .what {
+  flex: 1;
+}
+.rec-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+.rec-val {
+  font-size: 15px;
+  font-weight: 500;
+}
+.records svg {
+  color: var(--sub);
+  flex: none;
+}

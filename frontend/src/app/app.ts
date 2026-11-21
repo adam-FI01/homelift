@@ -1,31 +1,160 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
+import { ConfirmHost } from './shared/confirm-host';
+import { ErrorBanner } from './shared/error-banner';
+import { RestTimerMini } from './workout/rest-timer-mini';
 
+/** The app shell: the page on top and a tab bar at the bottom, as in the mockups. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RestTimerMini, ConfirmHost, ErrorBanner],
   template: `
-    <header class="bar">
-      <span class="brand">HomeLift</span>
-    </header>
     <main class="content">
       <router-outlet />
     </main>
+    @if (!onWorkout() && !onLock()) {
+      <app-rest-timer-mini class="mini" />
+    }
+    <app-confirm-host />
+    <app-error-banner />
+    <nav class="tabs" aria-label="Main" [hidden]="onLock()">
+      <a
+        routerLink="/"
+        routerLinkActive="on"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      >
+        <svg
+          aria-hidden="true"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linejoin="round"
+        >
+          <path d="M4 10l8-6 8 6v10h-5v-6H9v6H4z" />
+        </svg>
+        Home
+      </a>
+      <a routerLink="/workout" routerLinkActive="on" ariaCurrentWhenActive="page">
+        <svg
+          aria-hidden="true"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+        >
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 8v4l3 2" />
+        </svg>
+        Today
+      </a>
+      <a routerLink="/history" routerLinkActive="on" ariaCurrentWhenActive="page">
+        <svg
+          aria-hidden="true"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linejoin="round"
+        >
+          <path d="M4 17l5-5 4 3 7-8" />
+        </svg>
+        History
+      </a>
+      <a routerLink="/routines" routerLinkActive="on" ariaCurrentWhenActive="page">
+        <svg
+          aria-hidden="true"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+        >
+          <rect x="4" y="4" width="16" height="16" rx="3" />
+          <path d="M8 9h8M8 13h8M8 17h5" />
+        </svg>
+        Routines
+      </a>
+    </nav>
   `,
   styles: `
-    :host { display: flex; flex-direction: column; min-height: 100dvh; }
-    .bar {
-      display: flex; align-items: center;
-      height: calc(env(safe-area-inset-top) + 64px);
-      padding: env(safe-area-inset-top) 20px 0;
-      max-width: 40rem; width: 100%; margin: 0 auto;
+    :host {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
     }
-    .brand { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
     .content {
-      flex: 1; width: 100%; max-width: 40rem; margin: 0 auto;
-      padding: 4px 20px calc(env(safe-area-inset-bottom) + 24px);
-      display: flex; flex-direction: column; gap: 16px;
+      flex: 1;
+      width: 100%;
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: calc(env(safe-area-inset-top) + 16px) 20px calc(env(safe-area-inset-bottom) + 140px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .mini {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      z-index: 11;
+      max-width: 38rem;
+      margin: 0 auto;
+      bottom: calc(env(safe-area-inset-bottom) + 72px);
+    }
+    .tabs {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      height: calc(env(safe-area-inset-bottom) + 64px);
+      padding-bottom: env(safe-area-inset-bottom);
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+    }
+    a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--sub);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    a.on {
+      color: var(--ink);
+      font-weight: 600;
     }
   `,
 })
-export class App {}
+export class App {
+  private readonly router = inject(Router);
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((e) => e instanceof NavigationEnd),
+      map((e) => (e as NavigationEnd).urlAfterRedirects),
+    ),
+    { initialValue: '' },
+  );
+
+  /** The workout page shows the full timer, so the mini one hides there. */
+  protected readonly onWorkout = computed(() => this.url().startsWith('/workout'));
+  /** The lock screen stands alone, without tabs. */
+  protected readonly onLock = computed(() => this.url().startsWith('/unlock'));
+}

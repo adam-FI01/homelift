@@ -1,0 +1,164 @@
+:host {
+  display: contents;
+}
+.sub {
+  font-size: 14px;
+  color: var(--sub);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: -10px;
+}
+.top h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+.pill {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  background: var(--soft);
+  color: var(--ink);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.big {
+  font-size: 44px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.unit {
+  font-size: 22px;
+  color: var(--sub);
+}
+.change {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--pos);
+}
+.change.down {
+  color: var(--neg);
+}
+.change .sub {
+  font-weight: 400;
+}
+
+.ranges {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.ranges button {
+  height: 36px;
+  border-radius: 18px;
+  border: 0;
+  background: none;
+  color: var(--sub);
+  font-size: 13px;
+  font-weight: 500;
+}
+.ranges button.on {
+  background: var(--soft);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.records {
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.records div {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.records div + div {
+  border-left: 1px solid var(--line);
+}
+.records .sub {
+  font-size: 12px;
+}
+.val {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.title {
+  font-size: 14px;
+  font-weight: 500;
+}
+.list {
+  padding: 0 16px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  gap: 12px;
+}
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+.what {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.what .sub {
+  font-size: 13px;
+}
+.date {
+  font-size: 15px;
+  font-weight: 500;
+}
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pos);
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--pos);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+}
+.empty p {
+  margin: 0;
+  color: var(--sub);
+}

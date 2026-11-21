@@ -1,0 +1,301 @@
+@switch (workout()) {
+  @case (undefined) {
+    <p class="sub">Loading…</p>
+  }
+  @case (null) {
+    <section class="hero">
+      <h1>No workout in progress</h1>
+      <p class="sub">Start one and add exercises as you go. Each set fills in from last time.</p>
+    </section>
+    @if (error(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
+    }
+    <button type="button" class="btn-primary" [disabled]="busy()" (click)="start()">
+      Start workout
+    </button>
+  }
+  @default {
+    <header class="top">
+      <a routerLink="/" class="icon" aria-label="Back to home">
+        <svg
+          aria-hidden="true"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+      </a>
+      <div class="title">
+        <span class="name">{{ workout()!.name ?? 'Workout' }}</span>
+        <span class="sub" aria-label="Elapsed time">{{ elapsed() }}</span>
+      </div>
+      <button type="button" class="finish" [disabled]="busy()" (click)="finish()">Finish</button>
+    </header>
+
+    @if (waiting() > 0) {
+      <p class="offline" role="status">
+        Offline · {{ waiting() }} {{ waiting() === 1 ? 'set' : 'sets' }} saved on this phone,
+        sending when you're back online
+      </p>
+    }
+
+    <div
+      class="progress"
+      role="progressbar"
+      aria-label="Workout progress"
+      [attr.aria-valuenow]="progress()"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div [style.width.%]="progress()"></div>
+    </div>
+
+    @if (workout()!.exercises.length > 1) {
+      <nav class="chips" aria-label="Exercises in this workout">
+        @for (e of workout()!.exercises; track e.id; let i = $index) {
+          <button
+            type="button"
+            class="chip"
+            [class.on]="i === index()"
+            [class.done]="e.sets.length >= e.targetSets"
+            [attr.aria-current]="i === index() ? 'step' : null"
+            (click)="index.set(i)"
+          >
+            {{ e.name }}
+          </button>
+        }
+      </nav>
+    }
+
+    @if (current(); as ex) {
+      <section class="exercise">
+        <div class="heading">
+          <span class="sub">Exercise {{ index() + 1 }} of {{ workout()!.exercises.length }}</span>
+          <h1>{{ ex.name }}</h1>
+          @if (supersetPartners().length) {
+            <span class="superset">Superset with {{ supersetPartners().join(', ') }}</span>
+          }
+          <span class="sub">{{ lastTimeSummary() }}</span>
+          @if (ex.notes) {
+            <span class="cue">{{ ex.notes }}</span>
+          }
+        </div>
+        <button type="button" class="pill" (click)="removeExercise()">Remove</button>
+      </section>
+
+      <section class="card sets" aria-label="Sets">
+        <div class="grid head">
+          <span>Set</span><span>Last time</span><span class="num">{{ unit() }}</span
+          ><span class="num">Reps</span><span></span>
+        </div>
+        @for (row of rows(); track $index) {
+          <div
+            class="grid"
+            [class.next]="row.next"
+            [class.todo]="!row.logged && !row.next"
+            [class.warm]="row.warmup"
+          >
+            <span>{{ row.label }}</span>
+            <span class="last">{{
+              row.last ? (row.last.weightKg | weight: 1 : false) + ' × ' + row.last.reps : '–'
+            }}</span>
+            @if (row.logged; as s) {
+              <span class="num">{{ s.weightKg | weight: 1 : false }}</span><span class="num">{{
+                s.reps
+              }}</span>
+              <button
+                type="button"
+                class="check"
+                [class.pending]="s.pending"
+                [attr.aria-label]="
+                  (row.warmup ? 'Warm-up' : 'Set ' + row.label) +
+                  (s.pending ? ' waiting to sync' : ' logged. Edit')
+                "
+                (click)="editSet(s)"
+              >
+                <svg
+                  aria-hidden="true"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                >
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              </button>
+            } @else if (row.next) {
+              <span class="num">{{ weight() }}</span><span class="num">{{ reps() }}</span
+              ><span class="ring" aria-hidden="true"></span>
+            } @else {
+              <span class="num"></span><span class="num"></span><span></span>
+            }
+          </div>
+        }
+      </section>
+
+      @if (ex.equipment === 'BARBELL') {
+        <button type="button" class="plates-link" (click)="plates.set(true)">
+          Plates for {{ weight() }} {{ unit() }}
+        </button>
+      }
+
+      @if (hint(); as h) {
+        <button type="button" class="hint" (click)="applyHint()">
+          <span class="hint-try">Try {{ h.weightKg | weight }} × {{ h.reps }}</span>
+          <span class="sub">{{ h.reason }}</span>
+        </button>
+      }
+
+      <section class="steppers" [attr.aria-label]="'Set ' + nextSetNumber()">
+        <app-stepper
+          id="weight-label"
+          [label]="'Weight (' + unit() + ')'"
+          [(value)]="weight"
+          [step]="weightStep()"
+          [decreaseLabel]="'Decrease weight by ' + weightStep() + ' ' + unit()"
+          [increaseLabel]="'Increase weight by ' + weightStep() + ' ' + unit()"
+        />
+        <app-stepper
+          id="reps-label"
+          label="Reps"
+          [(value)]="reps"
+          decreaseLabel="One fewer rep"
+          increaseLabel="One more rep"
+        />
+      </section>
+
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+
+      <div class="log-row">
+        <button
+          type="button"
+          class="warm-toggle"
+          [attr.aria-pressed]="warmupNext()"
+          (click)="warmupNext.set(!warmupNext())"
+        >
+          Warm-up
+        </button>
+      </div>
+      <button type="button" class="btn-primary log" [disabled]="busy()" (click)="logSet()">
+        {{ warmupNext() ? 'Log warm-up' : 'Log set ' + nextSetNumber() }} · {{ weight() }}
+        {{ unit() }} ×
+        {{ reps() }}
+      </button>
+    } @else {
+      <p class="sub empty">Add your first exercise to start logging.</p>
+    }
+
+    <button type="button" class="secondary" (click)="picking.set(true)">Add exercise</button>
+
+    <app-sheet title="Add exercise" [open]="picking()" (closed)="picking.set(false)">
+      @if (picking()) {
+        <app-exercise-picker (picked)="add($event)" />
+      }
+    </app-sheet>
+
+    <app-sheet
+      [title]="editing()?.set?.warmup ? 'Edit warm-up' : 'Edit set'"
+      [open]="!!editing()"
+      (closed)="editing.set(null)"
+    >
+      @if (editing()) {
+        <div class="steppers">
+          <app-stepper
+            id="edit-weight-label"
+            [label]="'Weight (' + unit() + ')'"
+            [(value)]="editWeight"
+            [step]="weightStep()"
+            [decreaseLabel]="'Decrease weight by ' + weightStep() + ' ' + unit()"
+            [increaseLabel]="'Increase weight by ' + weightStep() + ' ' + unit()"
+          />
+          <app-stepper
+            id="edit-reps-label"
+            label="Reps"
+            [(value)]="editReps"
+            decreaseLabel="One fewer rep"
+            increaseLabel="One more rep"
+          />
+        </div>
+        <div class="row-toggle">
+          <span id="edit-warmup-label">Warm-up set</span>
+          <button
+            type="button"
+            role="switch"
+            class="switch"
+            aria-labelledby="edit-warmup-label"
+            [attr.aria-checked]="editWarmup()"
+            (click)="editWarmup.set(!editWarmup())"
+          >
+            <span></span>
+          </button>
+        </div>
+        <button type="button" class="btn-primary" [disabled]="busy()" (click)="saveSet()">
+          Save · {{ editWeight() }} {{ unit() }} × {{ editReps() }}
+        </button>
+        <button type="button" class="link danger" [disabled]="busy()" (click)="deleteSet()">
+          Delete set
+        </button>
+      }
+    </app-sheet>
+
+    <app-sheet
+      [title]="'Plates for ' + weight() + ' ' + unit()"
+      [open]="plates()"
+      (closed)="plates.set(false)"
+    >
+      @if (plates()) {
+        <app-plate-calculator [total]="weight()" />
+      }
+    </app-sheet>
+
+    <app-sheet title="Finish workout?" [open]="finishing()" (closed)="finishing.set(false)">
+      <dl class="summary">
+        <div>
+          <dt>Time</dt>
+          <dd>{{ elapsed() }}</dd>
+        </div>
+        <div>
+          <dt>Exercises</dt>
+          <dd>{{ summary().exercises }}</dd>
+        </div>
+        <div>
+          <dt>Sets</dt>
+          <dd>{{ summary().sets }}</dd>
+        </div>
+        <div>
+          <dt>Volume</dt>
+          <dd>{{ summary().volume | weight: 0 }}</dd>
+        </div>
+      </dl>
+      <label class="notes">
+        <span>Notes</span>
+        <textarea
+          class="field"
+          rows="3"
+          maxlength="2000"
+          placeholder="How did it go?"
+          [value]="notesDraft()"
+          (input)="notesDraft.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <button type="button" class="btn-primary" [disabled]="busy()" (click)="confirmFinish()">
+        Finish workout
+      </button>
+      <button type="button" class="secondary" (click)="finishing.set(false)">Keep going</button>
+    </app-sheet>
+
+    <app-rest-timer />
+
+    <button type="button" class="link" [disabled]="busy()" (click)="discard()">
+      Discard workout
+    </button>
+  }
+}

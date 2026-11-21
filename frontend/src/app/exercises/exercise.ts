@@ -25,10 +25,17 @@ export interface Exercise {
   name: string;
   muscleGroup: MuscleGroup;
   equipment: Equipment;
+  /** Rest after each set in seconds, or null to use the default from Settings. */
+  restSeconds: number | null;
+  /** Set-up cues such as seat height or grip. */
+  notes: string | null;
   archived: boolean;
 }
 
-export type ExerciseInput = Pick<Exercise, 'name' | 'muscleGroup' | 'equipment'>;
+export type ExerciseInput = Pick<
+  Exercise,
+  'name' | 'muscleGroup' | 'equipment' | 'restSeconds' | 'notes'
+>;
 
 /** Turns an API enum such as FULL_BODY into "Full body". */
 export function label(value: MuscleGroup | Equipment): string {

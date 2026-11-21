@@ -1,0 +1,112 @@
+@if (data(); as d) {
+  @if (d.failed || !d.exercise || !d.history) {
+    <p class="card sub">Couldn't load this exercise.</p>
+  } @else {
+    <header class="top">
+      <a routerLink="/history" class="icon" aria-label="Back to history">
+        <svg
+          aria-hidden="true"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+      </a>
+      <h1>{{ d.exercise.name }}</h1>
+      <a class="pill" [routerLink]="['/exercises', d.exercise.id, 'edit']">Edit</a>
+    </header>
+
+    @if (headline(); as h) {
+      <section class="headline">
+        <span class="sub">Estimated 1-rep max</span>
+        <span class="big"
+          >{{ h.value | weight: 1 : false }} <span class="unit">{{ unit() }}</span></span
+        >
+        @if (h.change !== null) {
+          <span class="change" [class.down]="h.change < 0">
+            {{ signed(display(h.change)) }} {{ unit() }} ({{ signed(h.percent ?? 0) }}%)
+            <span class="sub">{{
+              range() === 'ALL' ? 'all time' : 'past ' + rangeName(range())
+            }}</span>
+          </span>
+        }
+      </section>
+
+      <app-line-chart [points]="points()" [label]="chartLabel()" [unit]="unit()" />
+
+      <div class="ranges" role="group" aria-label="Range">
+        @for (r of ranges; track r) {
+          <button
+            type="button"
+            [class.on]="range() === r"
+            [attr.aria-pressed]="range() === r"
+            (click)="range.set(r)"
+          >
+            {{ rangeName(r) }}
+          </button>
+        }
+      </div>
+
+      <section class="card records" aria-label="Records">
+        <div>
+          <span class="sub">Heaviest</span>
+          <span class="val">{{
+            d.history.records.heaviest
+              ? (d.history.records.heaviest.weightKg | weight: 1 : false) +
+                ' × ' +
+                d.history.records.heaviest.reps
+              : '–'
+          }}</span>
+        </div>
+        <div>
+          <span class="sub">Most reps</span>
+          <span class="val">{{
+            d.history.records.mostReps
+              ? (d.history.records.mostReps.weightKg | weight: 1 : false) +
+                ' × ' +
+                d.history.records.mostReps.reps
+              : '–'
+          }}</span>
+        </div>
+        <div>
+          <span class="sub">Top volume</span>
+          <span class="val">{{
+            d.history.records.sessionVolume
+              ? (d.history.records.sessionVolume.value | weight: 0)
+              : '–'
+          }}</span>
+        </div>
+      </section>
+
+      <section aria-label="Past sessions" class="sessions">
+        <span class="title">Sessions</span>
+        <div class="card list">
+          @for (s of d.history.sessions; track s.workoutId) {
+            <div class="row">
+              <div class="what">
+                <span class="date">{{ shortDate(s.date) }}</span>
+                <span class="sub">{{ describeSets(s.sets, unit(), display) }}</span>
+              </div>
+              @if (records().has(s.workoutId)) {
+                <span class="badge">Record</span>
+              } @else {
+                <span class="sub">{{ s.volumeKg | weight: 0 }}</span>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    } @else {
+      <section class="card empty">
+        <p>No sets logged for {{ d.exercise.name }} yet.</p>
+        <a class="btn-primary" routerLink="/workout">Start a workout</a>
+      </section>
+    }
+  }
+} @else {
+  <p class="sub">Loading…</p>
+}

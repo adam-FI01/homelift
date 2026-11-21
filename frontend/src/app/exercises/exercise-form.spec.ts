@@ -40,6 +40,8 @@ describe('ExerciseForm', () => {
       name: 'Cable Lateral Raise',
       muscleGroup: 'SHOULDERS',
       equipment: 'CABLE',
+      restSeconds: null,
+      notes: null,
     });
     req.flush({ id: 9, ...req.request.body, archived: false });
     expect(navigate).toHaveBeenCalledWith(['/exercises']);
