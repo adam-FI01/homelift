@@ -10,16 +10,19 @@ A self-hosted workout tracker made for a home server. HomeLift ships as one smal
 
 ## Features
 
-- **Install it like an app.** Add HomeLift to your home screen; it opens full screen, loads without a connection, and sets logged offline are kept on the phone and sent when you're back.
+- **Install it like an app.** Add HomeLift to your home screen; it opens full screen and loads without a connection. Sets, corrections, notes and finishing a workout done offline wait on the phone and are sent in order when you're back. A banner tells you when a new version is ready.
 - **Log sets with one tap.** Each set is prefilled from the last one, or from last time, with big +/− controls and a rest timer that survives a reload.
 - **Warm-ups, supersets and notes.** Tag warm-up sets (left out of volume and records), pair exercises into supersets that rest after the round, and keep notes on workouts and set-up cues on exercises.
-- **Routines.** Save plans like "Push A" with sets, reps and rest, and start them with one tap. Optional auto progression adds 2.5 kg once every set hits its reps.
+- **Routines.** Save plans like "Push A" with sets, reps (or a range such as 8 to 12) and rest, and start them with one tap. Optional auto progression adds weight once every set hits its reps, or the top of the range.
+- **Progression hints, no AI.** Plain arithmetic from last time: add a rep until the top of the range, then add weight; match last time after a miss; a lighter week after two misses in a row. Each exercise can have its own weight step.
+- **Pictures.** Add your own photo or a short clip to an exercise. They live next to the database and go into backups.
+- **Import.** Bring your history in from a CSV, such as a Strong, Hevy or FitNotes export, with a dry run and a match step for exercise names.
 - **Progress.** Estimated 1-rep max (Epley) over time per exercise, records, and every past session.
 - **Stats.** A Wrapped-style recap for any day, week, month, quarter or year: volume, records, top lifts, muscle focus, streaks and habits.
 - **Body.** Log body weight, body fat and measurements; weight is charted on Stats.
 - **Settings.** Default rest with per-exercise overrides, auto-start, sound and vibration, kg or lb, and light, dark or system theme.
 - **Optional PIN.** Off by default. Turn it on in Settings or with `HOMELIFT_PIN`; each device stays unlocked for 30 days. It keeps casual hands out on a home network, and isn't a substitute for keeping the server off the open internet.
-- **Your data.** Download a full database backup, a CSV of every set, or a JSON dump at any time.
+- **Your data.** Download a full backup (database and pictures), a CSV of every set, or a JSON dump at any time.
 
 ## Quick start
 
@@ -73,7 +76,7 @@ Design notes:
 - **Readable operations.** The image logs JSON (Elastic Common Schema) with one line per API call: method, path, status, duration and a request id that is also returned as `X-Request-Id`. Browsers get a friendly error page; the API always answers with `problem+json`.
 - **Small footprint.** One database connection (SQLite allows a single writer), Serial GC, and a capped heap keep memory at about 220 MB at idle.
 - **Fast multi-arch builds.** The frontend and the jar build once on the runner's native platform. Only the thin runtime layer is per-architecture, so arm64 builds don't emulate Maven or npm.
-- **Native-ready.** The GraalVM `native-maven-plugin` is already configured, so a native image can be added later without restructuring.
+- **Optional native image.** A GraalVM build starts in under half a second and idles at almost no CPU. It is not the default; see [Native image](#native-image-optional).
 
 ## Project layout
 
@@ -145,6 +148,8 @@ cd backend && ./mvnw package -DskipTests
 cd e2e && npm ci && npx playwright install chromium && npx playwright test
 ```
 
+The suite includes an accessibility scan ([axe](https://github.com/dequelabs/axe-core)) of every main screen in light and dark mode; it fails on serious or critical problems. Automatic checks catch only part of what matters, so a manual pass with a screen reader such as VoiceOver on iOS is still worth doing before a release.
+
 CI runs them only on pull requests into `main`.
 
 ## API
@@ -153,14 +158,15 @@ Everything the UI does goes through a JSON API under `/api`. Errors use RFC 9457
 
 | Area      | Endpoints |
 | --------- | --------- |
-| Exercises | `GET/POST /api/exercises`, `GET/PUT /api/exercises/{id}`, `POST …/{id}/archive`, `POST …/{id}/restore`, `GET …/{id}/history` |
+| Exercises | `GET/POST /api/exercises`, `GET/PUT /api/exercises/{id}`, `POST …/{id}/archive`, `POST …/{id}/restore`, `GET …/{id}/history`, `PUT/DELETE …/{id}/media`, `GET …/{id}/media/{file}` |
 | Workouts  | `GET /api/workouts`, `GET /api/workouts/current`, `POST /api/workouts`, `GET/DELETE /api/workouts/{id}`, `POST …/{id}/exercises`, `DELETE …/{id}/exercises/{exerciseId}`, `POST …/sets`, `PUT/DELETE …/sets/{setId}`, `PUT …/{id}/notes`, `POST …/{id}/finish` |
 | Routines  | `GET/POST /api/routines`, `GET/PUT/DELETE /api/routines/{id}`, `POST …/{id}/start` |
 | Stats     | `GET /api/stats?period=DAY\|WEEK\|MONTH\|QUARTER\|YEAR&date=&zone=` |
 | Body      | `GET/PUT /api/body`, `DELETE /api/body/{id}` |
 | PIN lock  | `GET /api/auth`, `POST /api/auth/unlock`, `POST /api/auth/lock`, `PUT/DELETE /api/auth/pin` |
 | Settings  | `GET/PUT /api/settings` |
-| Export    | `GET /api/export/homelift.db`, `GET /api/export/sets.csv`, `GET /api/export/backup.json` |
+| Export    | `GET /api/export/homelift.zip`, `GET /api/export/homelift.db`, `GET /api/export/sets.csv`, `GET /api/export/backup.json` |
+| Import    | `POST /api/import/preview` (dry run), `POST /api/import` |
 
 A [Postman](https://www.postman.com/) collection covering every endpoint (43 requests) lives in [`postman/`](postman). Import both files, pick the **HomeLift local** environment (`http://localhost:8080`), and run the folders top to bottom: requests that create things save their ids for the next ones. For your own server, duplicate the environment and change `baseUrl`.
 
@@ -176,7 +182,7 @@ feature/* ──PR──► qa ──PR──► main ──► ghcr.io/adam-fi0
 - Both branches are protected. Changes need a pull request with passing checks, and force pushes and deletion are blocked.
 - Pull requests run the frontend and backend tests plus a quick amd64 image build. The full amd64 + arm64 image is built and published **only from `main`**.
 - **Releasing** a version: bump the version in `backend/pom.xml` and `frontend/package.json`, move the `Unreleased` notes in [`CHANGELOG.md`](CHANGELOG.md) under the new version, merge `qa` into `main`, then tag that merge commit (`git tag v1.2.3 && git push origin v1.2.3`). The tag publishes `:1.2.3` and `:1.2` images and creates the GitHub release from the changelog. Tags on any commit not on `main` are refused.
-- To stay on a version, use `ghcr.io/adam-fi01/homelift:1.0.0` (or `:1.0` for patch updates) instead of `:latest`.
+- To stay on a version, use `ghcr.io/adam-fi01/homelift:1.1.0` (or `:1.1` for patch updates) instead of `:latest`.
 
 ## Roadmap
 
@@ -187,7 +193,33 @@ feature/* ──PR──► qa ──PR──► main ──► ghcr.io/adam-fi0
 - [x] History, records and estimated 1RM charts
 - [x] Stats for any day, week, month, quarter or year
 - [x] Data export and backup
-- [ ] Optional GraalVM native image
+- [x] Progression hints, rep ranges, offline queue, exercise pictures, CSV import, accessibility checks
+- [ ] Automatic backups (needs a second drive)
+- [x] Optional GraalVM native image (see [Native image](#native-image-optional))
+
+## Native image (optional)
+
+The normal image runs on the JVM and is what `:latest` and `:<version>` use. A GraalVM native build is
+available for people who want faster starts and less CPU. It is never the default.
+
+Measured on a 1.1.0 build with the same data (a dev machine, not the Pi, so compare the ratios):
+
+| | JVM, defaults | JVM, image flags | Native |
+| --- | --- | --- | --- |
+| Time to ready | 6.9 s | 7.4 s | 0.43 s |
+| CPU while starting | 19.7 s | 9.5 s | 0.34 s |
+| CPU over 45 s idle | 110 ms | 40 ms | 10 ms |
+| CPU for 1,200 requests | 8.1 s | 4.8 s | 1.8 s |
+| Memory (RSS) | 384 MB | 289 MB | 216 MB |
+
+"JVM, image flags" is what the regular Docker image already sets (`-XX:+UseSerialGC`,
+`-XX:TieredStopAtLevel=1`, `-Xss512k`, `MaxRAMPercentage=75`). The native build needs about 10 GB of RAM and
+roughly eight minutes, so it is built in CI, not on the Pi.
+
+- Build and publish: Actions › Native image › Run workflow, with a version such as `1.1.0`. It pushes
+  `ghcr.io/<owner>/homelift:1.1.0-native` for amd64 and arm64 and never touches `:latest`.
+- Use it by changing the image tag in your Compose file to the `-native` tag. Data and settings are the same.
+- Locally: `Dockerfile.native` is the recipe; the end-to-end tests pass against the native binary.
 
 ## License
 

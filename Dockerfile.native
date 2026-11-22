@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:1.7
+#
+# Optional GraalVM native image: the same app compiled ahead of time. It starts in a fraction of a
+# second and idles at a fraction of the JVM's memory. Build it with the "Native image" workflow, or
+# by hand:  docker build -f Dockerfile.native -t homelift:native .
+#
+# native-image can't cross-compile, so this builds for the platform you run it on (CI uses an arm64
+# runner for arm64). The build needs about 10 GB of RAM and several minutes. Run it on a bigger
+# machine or in CI, not on the Raspberry Pi; the Pi only needs to run the result.
+
+# ---- 1. Angular -----------------------------------------------------------
+FROM --platform=$BUILDPLATFORM node:26-alpine AS web
+WORKDIR /src/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# ---- 2. Native executable -------------------------------------------------
+FROM ghcr.io/graalvm/native-image-community:25 AS native
+WORKDIR /src/backend
+COPY backend/.mvn .mvn
+COPY backend/mvnw backend/pom.xml ./
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -B -Pnative dependency:go-offline -Dskip.frontend=true
+COPY backend/src src
+COPY --from=web /src/frontend/dist/frontend/browser src/main/resources/static
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -Pnative -DskipTests -Dskip.frontend=true native:compile \
+ && cp target/homelift /homelift
+
+# ---- 3. Runtime -----------------------------------------------------------
+FROM debian:bookworm-slim
+LABEL org.opencontainers.image.title="HomeLift (native)" \
+      org.opencontainers.image.description="Self-hosted workout tracker, GraalVM native image" \
+      org.opencontainers.image.source="https://github.com/adam-FI01/homelift" \
+      org.opencontainers.image.licenses="MIT"
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends zlib1g \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd --system --gid 1000 homelift \
+ && useradd --system --uid 1000 --gid homelift --home /app homelift \
+ && mkdir -p /data && chown homelift:homelift /data
+
+WORKDIR /app
+COPY --from=native /homelift /app/homelift
+
+ENV HOMELIFT_DATA_DIR=/data \
+    LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs
+
+USER homelift
+VOLUME /data
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health/liveness HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+
+# The serial GC keeps the heap small; this caps it well under the container limit.
+ENTRYPOINT ["/app/homelift", "-Xmx256m"]

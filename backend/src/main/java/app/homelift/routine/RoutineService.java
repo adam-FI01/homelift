@@ -82,6 +82,13 @@ public class RoutineService {
 	}
 
 	private List<RoutineExercise> plan(RoutineInput input) {
+		// Checked here, not with a bean validation getter, so it needs no reflection in the native image.
+		if (input.exercises().stream().anyMatch((e) -> e.maxReps() != null && e.maxReps() < e.reps())) {
+			ErrorResponseException ex = new ErrorResponseException(HttpStatus.BAD_REQUEST);
+			ex.getBody().setTitle("Invalid rep range");
+			ex.getBody().setDetail("The top of a rep range can't be below the bottom.");
+			throw ex;
+		}
 		return input.exercises()
 			.stream()
 			.map((e) -> new RoutineExercise(this.exercises.get(e.exerciseId()), e.sets(), e.reps(), e.maxReps(), e.restSeconds(),
