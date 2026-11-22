@@ -4,12 +4,13 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, map } from 'rxjs';
 import { ConfirmHost } from './shared/confirm-host';
 import { ErrorBanner } from './shared/error-banner';
+import { UpdateBanner } from './shared/update-banner';
 import { RestTimerMini } from './workout/rest-timer-mini';
 
 /** The app shell: the page on top and a tab bar at the bottom, as in the mockups. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RestTimerMini, ConfirmHost, ErrorBanner],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RestTimerMini, ConfirmHost, ErrorBanner, UpdateBanner],
   template: `
     <main class="content">
       <router-outlet />
@@ -19,6 +20,7 @@ import { RestTimerMini } from './workout/rest-timer-mini';
     }
     <app-confirm-host />
     <app-error-banner />
+    <app-update-banner />
     <nav class="tabs" aria-label="Main" [hidden]="onLock()">
       <a
         routerLink="/"
