@@ -54,7 +54,7 @@ public class WorkoutService {
 	public WorkoutView view(long id) {
 		Workout w = get(id);
 		return new WorkoutView(w.getId(), w.getName(), w.getRoutineId(), w.getStartedAt(), w.getFinishedAt(), w.getNotes(),
-				w.getExercises().stream().map((we) -> ExerciseView.of(we, previousSets(we))).toList());
+				w.getExercises().stream().map((we) -> ExerciseView.of(we, previousSets(we), missedSessions(we))).toList());
 	}
 
 	/** The sets logged the last time this exercise was done, in any workout but the given one. */
@@ -65,6 +65,32 @@ public class WorkoutService {
 			.findFirst()
 			.map(WorkoutExercise::getWorkingSets)
 			.orElse(List.of());
+	}
+
+	/**
+	 * How many of the last two sessions with this exercise fell short of the plan (0, 1 or 2),
+	 * counting back from the most recent and stopping at the first session that met it. A session
+	 * falls short when a planned set is missing or a set has fewer reps than the plan's bottom.
+	 */
+	int missedSessions(WorkoutExercise current) {
+		int missed = 0;
+		for (WorkoutExercise earlier : this.workouts.findPreviousExercise(current.getExercise().getId(),
+				current.getWorkout().getId(), Limit.of(2))) {
+			if (!missedPlan(earlier)) {
+				break;
+			}
+			missed++;
+		}
+		return missed;
+	}
+
+	private static boolean missedPlan(WorkoutExercise e) {
+		Integer target = e.getTargetReps();
+		if (target == null) {
+			return false;
+		}
+		List<WorkoutSet> sets = e.getWorkingSets();
+		return sets.size() < e.getTargetSets() || sets.stream().anyMatch((s) -> s.getReps() < target);
 	}
 
 	@Transactional
@@ -84,7 +110,7 @@ public class WorkoutService {
 		workout.startedFrom(routineId);
 		for (PlannedExercise p : plan) {
 			WorkoutExercise added = workout.addExercise(this.exercises.get(p.exerciseId()), p.sets());
-			added.plan(p.reps(), p.restSeconds(), p.autoProgress());
+			added.plan(p.reps(), p.maxReps(), p.restSeconds(), p.autoProgress());
 			added.supersetGroup(p.supersetGroup());
 		}
 		this.workouts.flush();

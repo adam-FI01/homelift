@@ -62,7 +62,6 @@ export class WorkoutPage {
   protected readonly settings = inject(SettingsService);
 
   protected readonly unit = this.settings.unitLabel;
-  protected readonly weightStep = this.settings.weightStep;
 
   private readonly queue = inject(OfflineQueue);
   /** The workout as the server last sent it. */
@@ -89,6 +88,12 @@ export class WorkoutPage {
   protected readonly error = signal<string | null>(null);
 
   protected readonly current = computed(() => this.workout()?.exercises[this.index()] ?? null);
+
+  /** The +/− step for the weight stepper, in the chosen unit: this exercise's own, else the setting. */
+  protected readonly weightStep = computed(() => {
+    const own = this.current()?.stepKg;
+    return own ? Math.round(this.settings.display(own) * 100) / 100 : this.settings.weightStep();
+  });
 
   /** Weight and reps for the next set, refilled whenever the exercise or its sets change. */
   protected readonly weight = linkedSignal(() => {
@@ -396,7 +401,9 @@ export class WorkoutPage {
   protected lastTimeSummary(): string {
     const ex = this.current();
     if (!ex) return '';
-    const plan = ex.targetReps ? `Target ${ex.targetSets} × ${ex.targetReps}` : null;
+    const reps =
+      ex.targetMaxReps && ex.targetReps ? `${ex.targetReps} to ${ex.targetMaxReps}` : ex.targetReps;
+    const plan = reps ? `Target ${ex.targetSets} × ${reps}` : null;
     if (ex.lastTime.length === 0) return plan ?? 'First time doing this one';
     const last =
       'last time ' +

@@ -3,6 +3,7 @@ package app.homelift.routine;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -20,7 +21,14 @@ final class RoutineDtos {
 	}
 
 	record ExerciseInput(@NotNull Long exerciseId, @Min(1) @Max(20) int sets, @Min(1) @Max(100) int reps,
+			@Nullable @Min(1) @Max(100) Integer maxReps,
 			@Min(0) @Max(900) int restSeconds, boolean autoProgress, @Nullable @Min(1) @Max(30) Integer supersetGroup) {
+
+		/** The top of a rep range can't be below the bottom. */
+		@AssertTrue(message = "maxReps must be at least reps")
+		boolean isRepRangeValid() {
+			return this.maxReps == null || this.maxReps >= this.reps;
+		}
 
 	}
 
@@ -32,12 +40,12 @@ final class RoutineDtos {
 
 	}
 
-	record ExerciseView(long id, long exerciseId, String name, int sets, int reps, int restSeconds,
+	record ExerciseView(long id, long exerciseId, String name, int sets, int reps, @Nullable Integer maxReps, int restSeconds,
 			boolean autoProgress, @Nullable Integer supersetGroup) {
 
 		static ExerciseView of(RoutineExercise e) {
 			return new ExerciseView(e.getId(), e.getExercise().getId(), e.getExercise().getName(), e.getSets(),
-					e.getReps(), e.getRestSeconds(), e.isAutoProgress(), e.getSupersetGroup());
+					e.getReps(), e.getMaxReps(), e.getRestSeconds(), e.isAutoProgress(), e.getSupersetGroup());
 		}
 
 	}

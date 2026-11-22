@@ -104,6 +104,34 @@ import { ExerciseService, problemMessage } from './exercise.service';
           </div>
         </fieldset>
 
+        <fieldset>
+          <legend>Weight step</legend>
+          <div class="rest">
+            <button
+              type="button"
+              class="chip"
+              [class.on]="step() === null"
+              [attr.aria-pressed]="step() === null"
+              (click)="step.set(null)"
+            >
+              Default ({{ defaultStep() }} {{ unit() }})
+            </button>
+            <div class="rest-pick" [class.on]="step() !== null">
+              <button type="button" aria-label="Smaller weight step" (click)="nudgeStep(-1)">
+                −
+              </button>
+              <output>{{ step() ?? defaultStep() }} {{ unit() }}</output>
+              <button type="button" aria-label="Bigger weight step" (click)="nudgeStep(1)">
+                +
+              </button>
+            </div>
+          </div>
+          <p class="hint">
+            What to add when you progress, for example 1 for small dumbbells or the jump between
+            plates on a machine.
+          </p>
+        </fieldset>
+
         @if (error(); as message) {
           <p class="error" role="alert">{{ message }}</p>
         }
@@ -274,6 +302,10 @@ export class ExerciseForm implements OnInit {
   /** This exercise's own rest in seconds, or null to follow the default. */
   protected readonly rest = signal<number | null>(null);
   protected readonly notes = signal('');
+  /** This exercise's own weight step in the chosen unit, or null to follow Settings. */
+  protected readonly step = signal<number | null>(null);
+  protected readonly unit = this.settings.unitLabel;
+  protected readonly defaultStep = this.settings.weightStep;
   protected readonly defaultRest = computed(() => this.settings.settings().defaultRestSeconds);
   protected readonly format = formatDuration;
   protected readonly archived = signal(false);
@@ -309,6 +341,7 @@ export class ExerciseForm implements OnInit {
       equipment,
       restSeconds: this.rest(),
       notes: this.notes().trim() || null,
+      stepKg: this.step() === null ? null : this.settings.toKg(this.step()!),
     };
     const id = this.id();
     this.run(id ? this.api.update(id, input) : this.api.create(input), () =>
@@ -344,7 +377,19 @@ export class ExerciseForm implements OnInit {
     this.rest.update((r) => Math.min(900, Math.max(0, (r ?? this.defaultRest()) + seconds)));
   }
 
+  /** Moves the step through the usual jumps: 0.5, 1, 1.25, 2, 2.5, 5, 10. */
+  protected nudgeStep(direction: -1 | 1): void {
+    const steps = [0.25, 0.5, 1, 1.25, 2, 2.5, 5, 10];
+    const now = this.step() ?? this.defaultStep();
+    const next =
+      direction > 0 ? steps.find((s) => s > now) : [...steps].reverse().find((s) => s < now);
+    if (next !== undefined) this.step.set(next);
+  }
+
   private fill(e: Exercise): void {
+    this.step.set(
+      e.stepKg == null ? null : Math.round(this.settings.display(e.stepKg) * 100) / 100,
+    );
     this.name.set(e.name);
     this.muscleGroup.set(e.muscleGroup);
     this.equipment.set(e.equipment);

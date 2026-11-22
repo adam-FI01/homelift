@@ -6,6 +6,7 @@ import {
   formatKg,
   nextSetDefaults,
   progressionHint,
+  roundToStep,
 } from './workout';
 
 function exercise(overrides: Partial<WorkoutExercise> = {}): WorkoutExercise {
@@ -184,5 +185,83 @@ describe('progressionHint', () => {
         exercise({ targetReps: 5, targetSets: 2, autoProgress: true, lastTime: last(5, 5) }),
       ),
     ).toBeNull();
+  });
+});
+
+describe('progressionHint with a rep range', () => {
+  const range = { targetReps: 8, targetMaxReps: 12, targetSets: 3 };
+  const sets = (...reps: number[]) => reps.map((r) => ({ weightKg: 20, reps: r }));
+
+  it('adds a rep until the top of the range', () => {
+    const hint = progressionHint(exercise({ ...range, lastTime: sets(10, 9, 9) }), 2.5);
+    expect(hint).toMatchObject({ weightKg: 20, reps: 10 });
+    expect(hint?.reason).toContain('12');
+  });
+
+  it('starts at the bottom of the range after a fresh start', () => {
+    expect(progressionHint(exercise({ ...range, lastTime: sets(6, 6, 6) }), 2.5)).toMatchObject({
+      weightKg: 20,
+      reps: 8,
+    });
+  });
+
+  it('adds weight and drops to the bottom once every set hits the top', () => {
+    expect(progressionHint(exercise({ ...range, lastTime: sets(12, 12, 13) }), 2.5)).toMatchObject({
+      weightKg: 22.5,
+      reps: 8,
+    });
+  });
+
+  it('uses the exercise own weight step', () => {
+    const ex = exercise({ ...range, stepKg: 1, lastTime: sets(12, 12, 12) });
+    expect(progressionHint(ex, 2.5)?.weightKg).toBe(21);
+  });
+
+  it('earns auto progression only at the top of the range', () => {
+    const base = { ...range, autoProgress: true };
+    expect(nextSetDefaults(exercise({ ...base, lastTime: sets(10, 10, 10) }), 2.5)).toEqual({
+      weightKg: 20,
+      reps: 8,
+    });
+    expect(nextSetDefaults(exercise({ ...base, lastTime: sets(12, 12, 12) }), 2.5)).toEqual({
+      weightKg: 22.5,
+      reps: 8,
+    });
+  });
+});
+
+describe('progressionHint after missed sessions', () => {
+  const missed = (n: number) =>
+    exercise({
+      targetReps: 5,
+      targetSets: 3,
+      missedSessions: n,
+      lastTime: [
+        { weightKg: 100, reps: 4 },
+        { weightKg: 100, reps: 3 },
+        { weightKg: 100, reps: 3 },
+      ],
+    });
+
+  it('suggests a lighter week after two misses in a row', () => {
+    const hint = progressionHint(missed(2), 2.5);
+    expect(hint).toMatchObject({ weightKg: 90, reps: 5, deload: true });
+    expect(hint?.reason).toContain('lighter week');
+  });
+
+  it('rounds the lighter weight to the exercise step', () => {
+    const ex = { ...missed(2), stepKg: 2.5, lastTime: [{ weightKg: 62.5, reps: 4 }] };
+    expect(progressionHint(ex, 2.5)?.weightKg).toBe(57.5); // 56.25 rounds to 57.5
+  });
+
+  it('only matches last time after a single miss', () => {
+    const hint = progressionHint(missed(1), 2.5);
+    expect(hint).toMatchObject({ weightKg: 100, reps: 5 });
+    expect(hint?.deload).toBeUndefined();
+  });
+
+  it('rounds to the nearest step', () => {
+    expect(roundToStep(56.2, 2.5)).toBe(55);
+    expect(roundToStep(57.4, 2.5)).toBe(57.5);
   });
 });

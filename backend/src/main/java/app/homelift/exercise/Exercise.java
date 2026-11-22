@@ -38,16 +38,26 @@ public class Exercise {
 	/** Set-up cues such as seat height or grip. */
 	private @Nullable String notes;
 
+	/** Weight to add when progressing, in kg, or null to use the app setting. */
+	@Column(name = "step_kg")
+	private @Nullable Double stepKg;
+
 	protected Exercise() {
 	}
 
 	public Exercise(String name, MuscleGroup muscleGroup, Equipment equipment, @Nullable Integer restSeconds,
 			@Nullable String notes) {
+		this(name, muscleGroup, equipment, restSeconds, notes, null);
+	}
+
+	public Exercise(String name, MuscleGroup muscleGroup, Equipment equipment, @Nullable Integer restSeconds,
+			@Nullable String notes, @Nullable Double stepKg) {
 		this.name = name;
 		this.muscleGroup = muscleGroup;
 		this.equipment = equipment;
 		this.restSeconds = restSeconds;
 		this.notes = notes;
+		this.stepKg = stepKg;
 	}
 
 	public Long getId() {
@@ -74,12 +84,17 @@ public class Exercise {
 		return this.notes;
 	}
 
+	public @Nullable Double getStepKg() {
+		return this.stepKg;
+	}
+
 	public boolean isArchived() {
 		return this.archived;
 	}
 
 	void update(String name, MuscleGroup muscleGroup, Equipment equipment, @Nullable Integer restSeconds,
-			@Nullable String notes) {
+			@Nullable String notes, @Nullable Double stepKg) {
+		this.stepKg = stepKg;
 		this.name = name;
 		this.muscleGroup = muscleGroup;
 		this.equipment = equipment;

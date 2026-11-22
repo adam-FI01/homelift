@@ -53,14 +53,15 @@ public final class WorkoutDtos {
 	}
 
 	public record ExerciseView(long id, long exerciseId, String name, MuscleGroup muscleGroup, Equipment equipment,
-			int targetSets, @Nullable Integer targetReps, @Nullable Integer restSeconds, boolean autoProgress,
-			@Nullable Integer supersetGroup, @Nullable String notes, List<SetView> sets, List<PreviousSet> lastTime) {
+			int targetSets, @Nullable Integer targetReps, @Nullable Integer targetMaxReps, @Nullable Integer restSeconds,
+			boolean autoProgress, @Nullable Integer supersetGroup, @Nullable String notes, @Nullable Double stepKg,
+			int missedSessions, List<SetView> sets, List<PreviousSet> lastTime) {
 
-		static ExerciseView of(WorkoutExercise we, List<WorkoutSet> previous) {
+		static ExerciseView of(WorkoutExercise we, List<WorkoutSet> previous, int missedSessions) {
 			var e = we.getExercise();
 			return new ExerciseView(we.getId(), e.getId(), e.getName(), e.getMuscleGroup(), e.getEquipment(),
-					we.getTargetSets(), we.getTargetReps(), we.getRestSeconds(), we.isAutoProgress(), we.getSupersetGroup(),
-					e.getNotes(), we.getSets().stream().map(SetView::of).toList(),
+					we.getTargetSets(), we.getTargetReps(), we.getTargetMaxReps(), we.getRestSeconds(), we.isAutoProgress(),
+					we.getSupersetGroup(), e.getNotes(), e.getStepKg(), missedSessions, we.getSets().stream().map(SetView::of).toList(),
 					previous.stream().map(PreviousSet::of).toList());
 		}
 

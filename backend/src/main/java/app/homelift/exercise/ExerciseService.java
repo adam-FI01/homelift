@@ -47,7 +47,7 @@ public class ExerciseService {
 		}
 		return this.repository
 			.save(new Exercise(name, request.muscleGroup(), request.equipment(), request.restSeconds(),
-					request.cleanNotes()));
+					request.cleanNotes(), request.stepKg()));
 	}
 
 	@Transactional
@@ -57,7 +57,8 @@ public class ExerciseService {
 		if (this.repository.existsByNameIgnoreCaseAndIdNot(name, id)) {
 			throw new DuplicateExerciseException(name);
 		}
-		exercise.update(name, request.muscleGroup(), request.equipment(), request.restSeconds(), request.cleanNotes());
+		exercise.update(name, request.muscleGroup(), request.equipment(), request.restSeconds(), request.cleanNotes(),
+				request.stepKg());
 		return exercise;
 	}
 

@@ -84,7 +84,9 @@
                   <span class="ss">Superset</span>
                 }
               </span>
-              <span class="sub">{{ e.sets }} × {{ e.reps }} · {{ formatRest(e.restSeconds) }}</span>
+              <span class="sub"
+                >{{ e.sets }} × {{ repsLabel(e) }} · {{ formatRest(e.restSeconds) }}</span
+              >
             </button>
           </div>
 
@@ -95,6 +97,7 @@
                   f of [
                     { key: 'sets', label: 'Sets' },
                     { key: 'reps', label: 'Reps' },
+                    { key: 'maxReps', label: 'Up to' },
                     { key: 'restSeconds', label: 'Rest' },
                   ];
                   track f.key
@@ -111,7 +114,11 @@
                         −
                       </button>
                       <output>{{
-                        f.key === 'restSeconds' ? formatRest(e.restSeconds) : $any(e)[f.key]
+                        f.key === 'restSeconds'
+                          ? formatRest(e.restSeconds)
+                          : f.key === 'maxReps'
+                            ? (e.maxReps ?? '–')
+                            : $any(e)[f.key]
                       }}</output>
                       <button
                         type="button"
@@ -129,7 +136,8 @@
                 <div class="what">
                   <span class="auto-title">Auto progression</span>
                   <span class="sub"
-                    >+{{ weightStep() }} {{ unit() }} when every set hits its reps</span
+                    >+{{ weightStep() }} {{ unit() }} when every set hits
+                    {{ e.maxReps ? 'the top of its range' : 'its reps' }}</span
                   >
                 </div>
                 <button
