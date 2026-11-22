@@ -64,6 +64,11 @@ export const routes: Routes = [
     title: 'Locked · HomeLift',
   },
   {
+    path: 'import',
+    loadComponent: () => import('./import/import-page').then((m) => m.ImportPage),
+    title: 'Import history · HomeLift',
+  },
+  {
     path: 'body',
     loadComponent: () => import('./body/body-page').then((m) => m.BodyPage),
     title: 'Body · HomeLift',
