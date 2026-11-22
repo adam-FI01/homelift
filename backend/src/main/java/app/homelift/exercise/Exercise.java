@@ -42,6 +42,14 @@ public class Exercise {
 	@Column(name = "step_kg")
 	private @Nullable Double stepKg;
 
+	/** Name of the picture or clip in the media folder, or null when there is none. */
+	@Column(name = "media_file")
+	private @Nullable String mediaFile;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "media_type")
+	private @Nullable MediaType mediaType;
+
 	protected Exercise() {
 	}
 
@@ -100,6 +108,19 @@ public class Exercise {
 		this.equipment = equipment;
 		this.restSeconds = restSeconds;
 		this.notes = notes;
+	}
+
+	public @Nullable String getMediaFile() {
+		return this.mediaFile;
+	}
+
+	public @Nullable MediaType getMediaType() {
+		return this.mediaType;
+	}
+
+	void setMedia(@Nullable String file, @Nullable MediaType type) {
+		this.mediaFile = file;
+		this.mediaType = type;
 	}
 
 	void archive() {

@@ -20,6 +20,24 @@
       <a class="pill" [routerLink]="['/exercises', d.exercise.id, 'edit']">Edit</a>
     </header>
 
+    @if (d.exercise.mediaUrl; as url) {
+      <figure class="demo">
+        @if (d.exercise.mediaType === 'VIDEO') {
+          <video
+            [src]="url"
+            controls
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            [attr.aria-label]="'How to do ' + d.exercise.name"
+          ></video>
+        } @else {
+          <img [src]="url" [alt]="'How to do ' + d.exercise.name" loading="lazy" decoding="async" />
+        }
+      </figure>
+    }
+
     @if (headline(); as h) {
       <section class="headline">
         <span class="sub">Estimated 1-rep max</span>

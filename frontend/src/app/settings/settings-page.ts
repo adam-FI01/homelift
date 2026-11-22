@@ -50,9 +50,14 @@ export class SettingsPage {
   ];
   protected readonly downloads = [
     {
-      href: '/api/export/homelift.db',
+      href: '/api/export/homelift.zip',
       title: 'Full backup',
-      detail: 'A copy of the database file. Restores everything.',
+      detail: 'The database and your exercise pictures in one file. Restores everything.',
+    },
+    {
+      href: '/api/export/homelift.db',
+      title: 'Database only',
+      detail: 'Just the database file, without pictures.',
     },
     {
       href: '/api/export/sets.csv',

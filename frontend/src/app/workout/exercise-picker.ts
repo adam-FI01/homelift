@@ -45,11 +45,17 @@ import { ExerciseService } from '../exercises/exercise.service';
                     </svg>
                   }
                 </span>
+                @if (e.mediaType === 'IMAGE' && e.mediaUrl) {
+                  <img class="thumb" [src]="e.mediaUrl" alt="" loading="lazy" decoding="async" />
+                }
                 <span class="name">{{ e.name }}</span>
                 <span class="sub">{{ label(e.muscleGroup) }}</span>
               </button>
             } @else {
               <button type="button" class="row" (click)="picked.emit(e)">
+                @if (e.mediaType === 'IMAGE' && e.mediaUrl) {
+                  <img class="thumb" [src]="e.mediaUrl" alt="" loading="lazy" decoding="async" />
+                }
                 <span class="name">{{ e.name }}</span>
                 <span class="sub">{{ label(e.muscleGroup) }}</span>
               </button>
@@ -115,6 +121,14 @@ import { ExerciseService } from '../exercises/exercise.service';
     }
     .name {
       flex: 1;
+    }
+    .thumb {
+      flex: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--soft);
     }
     .box {
       flex: none;

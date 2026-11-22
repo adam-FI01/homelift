@@ -31,6 +31,9 @@ export interface Exercise {
   notes: string | null;
   /** Weight to add when progressing, in kg, or null to follow the setting. */
   stepKg?: number | null;
+  /** Address of the picture or clip, or null when there is none. */
+  mediaUrl?: string | null;
+  mediaType?: 'IMAGE' | 'VIDEO' | null;
   archived: boolean;
 }
 
