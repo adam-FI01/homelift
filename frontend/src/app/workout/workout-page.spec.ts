@@ -182,7 +182,7 @@ describe('WorkoutPage', () => {
   });
 
   it('keeps logging while offline and shows the set as pending', async () => {
-    localStorage.removeItem('homelift.offline.sets');
+    localStorage.removeItem('homelift.offline.queue');
     const { fixture, el, button, http } = await setup(WORKOUT);
     button('Log set 2').click();
     http
@@ -195,6 +195,22 @@ describe('WorkoutPage', () => {
     button('Bench Press').click();
     await fixture.whenStable();
     expect(el.querySelector('[aria-label="Set 2 waiting to sync"]')).not.toBeNull();
-    localStorage.removeItem('homelift.offline.sets');
+    localStorage.removeItem('homelift.offline.queue');
+  });
+
+  it('finishes offline: keeps the finish on the phone and goes home', async () => {
+    localStorage.removeItem('homelift.offline.queue');
+    const { fixture, el, button, http } = await setup(WORKOUT);
+    button('Finish').click();
+    await fixture.whenStable();
+    button('Finish workout').click();
+    http
+      .expectOne({ method: 'POST', url: '/api/workouts/7/finish' })
+      .error(new ProgressEvent('error'));
+    await fixture.whenStable();
+    const queued = JSON.parse(localStorage.getItem('homelift.offline.queue')!);
+    expect(queued.map((q: { type: string }) => q.type)).toEqual(['finish']);
+    expect(el).toBeTruthy();
+    localStorage.removeItem('homelift.offline.queue');
   });
 });

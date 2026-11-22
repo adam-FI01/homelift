@@ -19,7 +19,8 @@ import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from './exercise-picker';
-import { OfflineQueue, withPending } from './offline-queue.service';
+import { NewAction, OfflineQueue, withPending } from './offline-queue.service';
+import { OfflineStatus } from './offline-status';
 import { PlateCalculator } from './plate-calculator';
 import { RestTimer } from './rest-timer.service';
 import { RestTimerCard } from './rest-timer';
@@ -40,7 +41,16 @@ import { WorkoutService } from './workout.service';
 /** The workout in progress: pick an exercise, log sets with one tap, rest between them. */
 @Component({
   selector: 'app-workout-page',
-  imports: [RouterLink, Stepper, RestTimerCard, ExercisePicker, Sheet, WeightPipe, PlateCalculator],
+  imports: [
+    RouterLink,
+    OfflineStatus,
+    Stepper,
+    RestTimerCard,
+    ExercisePicker,
+    Sheet,
+    WeightPipe,
+    PlateCalculator,
+  ],
   templateUrl: './workout-page.html',
   styleUrl: './workout-page.scss',
 })
@@ -59,10 +69,6 @@ export class WorkoutPage {
   private readonly server = signal<Workout | null | undefined>(undefined);
   /** What the page shows: the server's workout plus any sets waiting to sync. */
   protected readonly workout = computed(() => withPending(this.server(), this.queue.items()));
-  protected readonly waiting = computed(() => {
-    const w = this.server();
-    return w ? this.queue.items().filter((q) => q.workoutId === w.id).length : 0;
-  });
   protected readonly index = linkedSignal<Workout | null | undefined, number>({
     source: this.workout,
     computation: (w, prev) =>
@@ -232,7 +238,14 @@ export class WorkoutPage {
         this.busy.set(false);
         if (err instanceof HttpErrorResponse && err.status === 0) {
           // Offline: keep the set on this device, show it as pending and carry on.
-          this.queue.add({ workoutId: w.id, workoutExerciseId: ex.id, weightKg, reps, warmup });
+          this.queue.add({
+            type: 'set',
+            workoutId: w.id,
+            workoutExerciseId: ex.id,
+            weightKg,
+            reps,
+            warmup,
+          });
           moveOn(this.workout()!);
         } else {
           this.error.set(problemMessage(err));
@@ -242,7 +255,6 @@ export class WorkoutPage {
   }
 
   protected editSet(set: LoggedSet): void {
-    if (set.pending) return; // not on the server yet
     this.editWeight.set(this.shown(set.weightKg));
     this.editReps.set(set.reps);
     this.editWarmup.set(set.warmup);
@@ -254,19 +266,32 @@ export class WorkoutPage {
     const ex = this.current();
     const e = this.editing();
     if (!w || !ex || !e) return;
-    this.run(
-      this.api.updateSet(
-        w.id,
-        ex.id,
-        e.set.id,
-        this.settings.toKg(this.editWeight()),
-        this.editReps(),
-        this.editWarmup(),
-      ),
+    const weightKg = this.settings.toKg(this.editWeight());
+    const reps = this.editReps();
+    const warmup = this.editWarmup();
+    const queued = e.set.queueKey;
+    if (queued) {
+      // Still only on this phone: change the waiting set itself.
+      this.queue.editPending(queued, { weightKg, reps, warmup });
+      this.editing.set(null);
+      return;
+    }
+    this.runOrQueue(
+      this.api.updateSet(w.id, ex.id, e.set.id, weightKg, reps, warmup),
+      {
+        type: 'editSet',
+        workoutId: w.id,
+        workoutExerciseId: ex.id,
+        setId: e.set.id,
+        weightKg,
+        reps,
+        warmup,
+      },
       () => {
         this.editing.set(null);
         this.reload();
       },
+      () => this.editing.set(null),
     );
   }
 
@@ -275,10 +300,21 @@ export class WorkoutPage {
     const ex = this.current();
     const e = this.editing();
     if (!w || !ex || !e) return;
-    this.run(this.api.removeSet(w.id, ex.id, e.set.id), () => {
+    const queued = e.set.queueKey;
+    if (queued) {
+      this.queue.removePending(queued);
       this.editing.set(null);
-      this.reload();
-    });
+      return;
+    }
+    this.runOrQueue(
+      this.api.removeSet(w.id, ex.id, e.set.id),
+      { type: 'deleteSet', workoutId: w.id, workoutExerciseId: ex.id, setId: e.set.id },
+      () => {
+        this.editing.set(null);
+        this.reload();
+      },
+      () => this.editing.set(null),
+    );
   }
 
   protected async removeExercise(): Promise<void> {
@@ -310,11 +346,31 @@ export class WorkoutPage {
     const w = this.workout();
     if (!w) return;
     const notes = this.notesDraft().trim();
-    const save = notes !== (w.notes ?? '') ? this.api.saveNotes(w.id, notes) : of(w);
-    this.run(save.pipe(switchMap(() => this.api.finish(w.id))), () => {
+    const changed = notes !== (w.notes ?? '');
+    const save = changed ? this.api.saveNotes(w.id, notes) : of(w);
+    const leave = () => {
       this.finishing.set(false);
       this.rest.skip();
       this.router.navigate(['/']);
+    };
+    this.busy.set(true);
+    this.error.set(null);
+    save.pipe(switchMap(() => this.api.finish(w.id))).subscribe({
+      next: () => {
+        this.busy.set(false);
+        leave();
+      },
+      error: (err: unknown) => {
+        this.busy.set(false);
+        if (err instanceof HttpErrorResponse && err.status === 0) {
+          // No connection: keep the notes and the finish on this phone, in order, and send them later.
+          if (changed) this.queue.add({ type: 'notes', workoutId: w.id, notes });
+          this.queue.add({ type: 'finish', workoutId: w.id });
+          leave();
+        } else {
+          this.error.set(problemMessage(err));
+        }
+      },
     });
   }
 
@@ -364,6 +420,32 @@ export class WorkoutPage {
     this.api.get(w.id).subscribe((updated) => {
       this.server.set(updated);
       then?.(updated);
+    });
+  }
+
+  /** Like `run`, but with no connection the change waits on this phone and `offline` shows it. */
+  private runOrQueue<T>(
+    request: Observable<T>,
+    action: NewAction,
+    done: (value: T) => void,
+    offline: () => void,
+  ): void {
+    this.busy.set(true);
+    this.error.set(null);
+    request.subscribe({
+      next: (value) => {
+        this.busy.set(false);
+        done(value);
+      },
+      error: (err: unknown) => {
+        this.busy.set(false);
+        if (err instanceof HttpErrorResponse && err.status === 0) {
+          this.queue.add(action);
+          offline();
+        } else {
+          this.error.set(problemMessage(err));
+        }
+      },
     });
   }
 

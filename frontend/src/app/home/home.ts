@@ -9,6 +9,8 @@ import { Routine, exerciseSummary } from '../routines/routine';
 import { RoutineService } from '../routines/routine.service';
 import { Stats, change, isoDate, localDate } from '../stats/stats';
 import { StatsService } from '../stats/stats.service';
+import { OfflineQueue } from '../workout/offline-queue.service';
+import { OfflineStatus } from '../workout/offline-status';
 import { WorkoutService } from '../workout/workout.service';
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -16,7 +18,7 @@ const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 /** The home summary: this week's volume, what's up next, the week at a glance and recent records. */
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, WeightPipe],
+  imports: [RouterLink, WeightPipe, OfflineStatus],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -48,6 +50,15 @@ export class Home {
         .pipe(catchError(() => of([]))),
     }),
   );
+
+  private readonly queue = inject(OfflineQueue);
+
+  /** The workout in progress, unless it is only waiting to be finished on the server. */
+  protected readonly current = computed(() => {
+    const c = this.data()?.current ?? null;
+    const finishing = this.queue.items().some((i) => i.type === 'finish' && i.workoutId === c?.id);
+    return finishing ? null : c;
+  });
 
   protected readonly offline = computed(() => {
     const d = this.data();

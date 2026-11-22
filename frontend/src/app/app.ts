@@ -10,7 +10,15 @@ import { RestTimerMini } from './workout/rest-timer-mini';
 /** The app shell: the page on top and a tab bar at the bottom, as in the mockups. */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RestTimerMini, ConfirmHost, ErrorBanner, UpdateBanner],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    RestTimerMini,
+    ConfirmHost,
+    ErrorBanner,
+    UpdateBanner,
+  ],
   template: `
     <main class="content">
       <router-outlet />

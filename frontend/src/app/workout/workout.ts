@@ -9,6 +9,8 @@ export interface LoggedSet {
   warmup: boolean;
   /** Logged while offline and not yet on the server. */
   pending?: boolean;
+  /** Key of the queued action, for a set that is still only on this device. */
+  queueKey?: string;
 }
 
 export interface PreviousSet {

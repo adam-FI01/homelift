@@ -36,12 +36,7 @@
       <button type="button" class="finish" [disabled]="busy()" (click)="finish()">Finish</button>
     </header>
 
-    @if (waiting() > 0) {
-      <p class="offline" role="status">
-        Offline · {{ waiting() }} {{ waiting() === 1 ? 'set' : 'sets' }} saved on this phone,
-        sending when you're back online
-      </p>
-    }
+    <app-offline-status />
 
     <div
       class="progress"
