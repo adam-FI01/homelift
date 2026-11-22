@@ -40,7 +40,7 @@ type Step = 'pick' | 'review' | 'done';
           <path d="M15 5l-7 7 7 7" />
         </svg>
       </a>
-      <h1>Import history</h1>
+      <h1>Import workouts</h1>
     </header>
 
     @if (step() === 'pick') {

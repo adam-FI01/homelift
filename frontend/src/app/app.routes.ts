@@ -66,7 +66,7 @@ export const routes: Routes = [
   {
     path: 'import',
     loadComponent: () => import('./import/import-page').then((m) => m.ImportPage),
-    title: 'Import history · HomeLift',
+    title: 'Import workouts · HomeLift',
   },
   {
     path: 'body',

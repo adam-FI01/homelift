@@ -20,7 +20,7 @@ import { ExerciseService } from '../exercises/exercise.service';
         [value]="query()"
         (input)="query.set($any($event.target).value)"
       />
-      <ul [attr.aria-multiselectable]="multiple() || null">
+      <ul>
         @for (e of matches(); track e.id) {
           <li>
             @if (multiple()) {
