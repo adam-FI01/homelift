@@ -139,63 +139,72 @@
   </div>
 </section>
 
-<app-sheet
-  [title]="
-    pinSheet() === 'remove'
-      ? 'Turn off the PIN?'
-      : pinSheet() === 'change'
-        ? 'Change PIN'
-        : 'Set a PIN'
-  "
-  [open]="pinSheet() !== null"
-  (closed)="pinSheet.set(null)"
->
-  @if (pinSheet(); as kind) {
+@if (pinForm(); as kind) {
+  <form
+    class="pin-form"
+    aria-labelledby="pin-form-title"
+    novalidate
+    (submit)="$event.preventDefault(); savePin()"
+  >
+    <h3 id="pin-form-title">
+      {{ kind === 'remove' ? 'Turn off the PIN' : kind === 'change' ? 'Change PIN' : 'Set a PIN' }}
+    </h3>
     @if (kind !== 'set') {
-      <label class="pin-field">
-        <span>Current PIN</span>
+      <label class="form-field">
+        <span class="label">Current PIN <span class="req">Required</span></span>
         <input
+          class="field pin-input"
+          id="pin-current"
           type="password"
           inputmode="numeric"
           autocomplete="current-password"
           maxlength="12"
+          aria-required="true"
           [value]="currentPin()"
           (input)="currentPin.set($any($event.target).value)"
         />
       </label>
     }
     @if (kind !== 'remove') {
-      <label class="pin-field">
-        <span>New PIN (4 to 12 digits)</span>
+      <label class="form-field">
+        <span class="label">New PIN <span class="req">Required</span></span>
         <input
+          class="field pin-input"
+          id="pin-new"
           type="password"
           inputmode="numeric"
           autocomplete="new-password"
           maxlength="12"
+          aria-required="true"
+          aria-describedby="pin-help"
           [value]="newPin()"
           (input)="newPin.set($any($event.target).value)"
         />
+        <span class="help" id="pin-help">4 to 12 digits</span>
       </label>
-      <label class="pin-field">
-        <span>New PIN again</span>
+      <label class="form-field">
+        <span class="label">New PIN again <span class="req">Required</span></span>
         <input
+          class="field pin-input"
           type="password"
           inputmode="numeric"
           autocomplete="new-password"
           maxlength="12"
+          aria-required="true"
           [value]="confirmPin()"
           (input)="confirmPin.set($any($event.target).value)"
         />
       </label>
     }
     @if (pinError(); as message) {
-      <p class="pin-error" role="alert">{{ message }}</p>
+      <p class="field-error" role="alert">{{ message }}</p>
     }
-    <button type="button" class="btn-primary" (click)="savePin()">
+    <button type="submit" [class]="kind === 'remove' ? 'btn-danger' : 'btn-primary'">
       {{ kind === 'remove' ? 'Turn off PIN' : 'Save PIN' }}
     </button>
-  }
-</app-sheet>
+    <button type="button" class="btn-quiet" (click)="pinForm.set(null)">Cancel</button>
+  </form>
+}
 
 <section class="group" aria-labelledby="data-title">
   <h2 id="data-title">Your data</h2>

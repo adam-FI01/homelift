@@ -135,9 +135,20 @@
       </section>
 
       @if (ex.equipment === 'BARBELL') {
-        <button type="button" class="plates-link" (click)="plates.set(true)">
-          Plates for {{ weight() }} {{ unit() }}
+        <button
+          type="button"
+          class="plates-link"
+          [attr.aria-expanded]="plates()"
+          aria-controls="plates-panel"
+          (click)="plates.set(!plates())"
+        >
+          {{ plates() ? 'Hide plates' : 'Plates for ' + weight() + ' ' + unit() }}
         </button>
+        @if (plates()) {
+          <section id="plates-panel" class="card plates-panel" aria-label="Plates">
+            <app-plate-calculator [total]="weight()" />
+          </section>
+        }
       }
 
       @if (hint(); as h) {
@@ -235,19 +246,14 @@
         <button type="button" class="btn-primary" [disabled]="busy()" (click)="saveSet()">
           Save · {{ editWeight() }} {{ unit() }} × {{ editReps() }}
         </button>
-        <button type="button" class="link danger" [disabled]="busy()" (click)="deleteSet()">
+        <button
+          type="button"
+          class="btn-quiet destructive"
+          [disabled]="busy()"
+          (click)="deleteSet()"
+        >
           Delete set
         </button>
-      }
-    </app-sheet>
-
-    <app-sheet
-      [title]="'Plates for ' + weight() + ' ' + unit()"
-      [open]="plates()"
-      (closed)="plates.set(false)"
-    >
-      @if (plates()) {
-        <app-plate-calculator [total]="weight()" />
       }
     </app-sheet>
 
@@ -270,8 +276,8 @@
           <dd>{{ summary().volume | weight: 0 }}</dd>
         </div>
       </dl>
-      <label class="notes">
-        <span>Notes</span>
+      <label class="form-field">
+        <span class="label">Notes <span class="req">Optional</span></span>
         <textarea
           class="field"
           rows="3"
@@ -282,38 +288,49 @@
         ></textarea>
       </label>
       @if (routineSaved(); as saved) {
-        <p class="sub saved" role="status">Saved as routine "{{ saved }}".</p>
+        <p class="routine-box saved" role="status">Saved as routine "{{ saved }}".</p>
       } @else if (workout()?.routineId == null) {
-        @if (routineName() === null) {
-          <button type="button" class="secondary" (click)="startSaveRoutine()">
-            Save as routine
-          </button>
-        } @else {
-          <label class="notes">
-            <span>Routine name</span>
-            <input
-              class="field"
-              maxlength="60"
-              autocomplete="off"
-              placeholder="e.g. Push A"
-              [value]="routineName()"
-              (input)="routineName.set($any($event.target).value)"
-            />
-          </label>
-          <button
-            type="button"
-            class="secondary"
-            [disabled]="busy() || !routineName()?.trim()"
-            (click)="saveRoutine()"
-          >
-            Save routine
-          </button>
-        }
+        <div class="routine-box">
+          @if (routineName() === null) {
+            <p class="help">Want to do this again? Keep these exercises as a routine.</p>
+            <button type="button" class="btn-secondary" (click)="startSaveRoutine()">
+              Save as routine
+            </button>
+          } @else {
+            <div class="form-field" [class.invalid]="routineError()">
+              <label class="label" for="routine-name">
+                Routine name <span class="req">Required</span>
+              </label>
+              <input
+                id="routine-name"
+                class="field"
+                maxlength="60"
+                autocomplete="off"
+                aria-required="true"
+                placeholder="e.g. Push A"
+                [attr.aria-invalid]="routineError()"
+                [attr.aria-describedby]="routineError() ? 'routine-name-error' : null"
+                [value]="routineName()"
+                (input)="routineName.set($any($event.target).value); routineError.set(false)"
+              />
+              @if (routineError()) {
+                <p id="routine-name-error" class="field-error" role="alert">
+                  Enter a name for the routine.
+                </p>
+              }
+            </div>
+            <button type="button" class="btn-secondary" [disabled]="busy()" (click)="saveRoutine()">
+              Save routine
+            </button>
+          }
+        </div>
       }
-      <button type="button" class="btn-primary" [disabled]="busy()" (click)="confirmFinish()">
-        Finish workout
-      </button>
-      <button type="button" class="secondary" (click)="finishing.set(false)">Keep going</button>
+      <div class="finish-actions">
+        <button type="button" class="btn-primary" [disabled]="busy()" (click)="confirmFinish()">
+          Finish workout
+        </button>
+        <button type="button" class="btn-quiet" (click)="finishing.set(false)">Keep going</button>
+      </div>
     </app-sheet>
 
     <app-rest-timer />

@@ -7,6 +7,7 @@ import { ExerciseService } from '../exercises/exercise.service';
 import { SettingsService } from '../settings/settings.service';
 import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
+import { ToastService } from '../shared/toast.service';
 import { Sheet } from '../shared/sheet';
 import { Workout, formatDuration, workingSets } from '../workout/workout';
 import { WorkoutService } from '../workout/workout.service';
@@ -57,6 +58,7 @@ export class HistoryPage {
   private readonly history = inject(HistoryService);
   private readonly workouts = inject(WorkoutService);
   private readonly confirm = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
   private readonly settings = inject(SettingsService);
   private readonly exercisesApi = inject(ExerciseService);
 
@@ -140,9 +142,10 @@ export class HistoryPage {
   protected saveNotes(): void {
     const w = this.detail();
     if (!w) return;
-    this.workouts
-      .saveNotes(w.id, this.notesDraft().trim())
-      .subscribe((updated) => this.detail.set(updated));
+    this.workouts.saveNotes(w.id, this.notesDraft().trim()).subscribe((updated) => {
+      this.detail.set(updated);
+      this.toast.show('Notes saved');
+    });
   }
 
   protected async remove(): Promise<void> {
@@ -158,6 +161,7 @@ export class HistoryPage {
     this.workouts.discard(w.id).subscribe(() => {
       this.removed.update((set) => new Set(set).add(w.id));
       this.detail.set(null);
+      this.toast.show('Workout deleted');
     });
   }
 

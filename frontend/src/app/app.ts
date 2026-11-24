@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, map } from 'rxjs';
 import { ConfirmHost } from './shared/confirm-host';
 import { ErrorBanner } from './shared/error-banner';
+import { ToastHost } from './shared/toast-host';
 import { UpdateBanner } from './shared/update-banner';
 import { RestTimerMini } from './workout/rest-timer-mini';
 
@@ -18,6 +19,7 @@ import { RestTimerMini } from './workout/rest-timer-mini';
     ConfirmHost,
     ErrorBanner,
     UpdateBanner,
+    ToastHost,
   ],
   template: `
     <main class="content">
@@ -29,6 +31,7 @@ import { RestTimerMini } from './workout/rest-timer-mini';
     <app-confirm-host />
     <app-error-banner />
     <app-update-banner />
+    <app-toast-host />
     <nav class="tabs" aria-label="Main" [hidden]="onLock()">
       <a
         routerLink="/"

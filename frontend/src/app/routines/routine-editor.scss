@@ -51,8 +51,23 @@
   gap: 2px;
   padding: 12px 16px;
 }
-.name .sub {
-  font-size: 12px;
+.name-label {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.req {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sub);
+}
+.name {
+  border: 1.5px solid var(--field-line);
+}
+.name.invalid {
+  border: 2px solid var(--neg);
 }
 .name input {
   border: 0;

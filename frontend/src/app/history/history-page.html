@@ -114,8 +114,8 @@
           </li>
         }
       </ul>
-      <label class="notes">
-        <span>Notes</span>
+      <label class="form-field">
+        <span class="label">Notes <span class="req">Optional</span></span>
         <textarea
           class="field"
           rows="2"
@@ -128,7 +128,7 @@
       @if (notesDraft().trim() !== (w.notes ?? '')) {
         <button type="button" class="btn-primary" (click)="saveNotes()">Save notes</button>
       }
-      <button type="button" class="delete" (click)="remove()">Delete workout</button>
+      <button type="button" class="btn-quiet destructive" (click)="remove()">Delete workout</button>
     }
   }
 </app-sheet>

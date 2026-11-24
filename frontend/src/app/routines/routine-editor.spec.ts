@@ -117,7 +117,13 @@ describe('RoutineEditor', () => {
     await fixture.whenStable();
     const save = () =>
       [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Save')!;
-    expect(save().disabled).toBe(true);
+    // Saving without a name does not send anything and says what is wrong.
+    expect(save().disabled).toBe(false);
+    expect(el.textContent).toContain('Required');
+    save().click();
+    await fixture.whenStable();
+    http.expectNone({ method: 'POST', url: '/api/routines' });
+    expect(el.querySelector('[role=alert]')?.textContent).toContain('Enter a name');
 
     const pick = (name: string) =>
       [...el.querySelectorAll('[role=checkbox]')].find((b) =>
@@ -135,7 +141,7 @@ describe('RoutineEditor', () => {
     [...el.querySelectorAll('button')]
       .find((b) => b.textContent?.trim() === 'Add 2 exercises')!
       .click();
-    const name = el.querySelector('input') as HTMLInputElement;
+    const name = el.querySelector('#routine-name') as HTMLInputElement;
     name.value = 'Legs';
     name.dispatchEvent(new Event('input'));
     await fixture.whenStable();
