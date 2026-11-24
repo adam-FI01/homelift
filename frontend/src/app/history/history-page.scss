@@ -200,3 +200,15 @@ a.row svg {
   font-size: 13px;
   color: var(--sub);
 }
+
+.secondary {
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 500;
+}
+.saved {
+  align-self: center;
+}

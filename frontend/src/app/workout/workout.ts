@@ -1,4 +1,5 @@
 import { Equipment, MuscleGroup } from '../exercises/exercise';
+import { RoutineInput } from '../routines/routine';
 
 export interface LoggedSet {
   id: number;
@@ -130,6 +131,30 @@ export function formatDuration(totalSeconds: number): string {
 /** The sets that count: everything but warm-ups. */
 export function workingSets(exercise: WorkoutExercise): LoggedSet[] {
   return exercise.sets.filter((s) => !s.warmup);
+}
+
+/**
+ * A routine from what was done: each exercise with its working-set count and last rep count.
+ * Exercises with no working sets are left out.
+ */
+export function routineFromWorkout(
+  workout: Workout,
+  name: string,
+  defaultRestSeconds: number,
+): RoutineInput {
+  const exercises = workout.exercises
+    .map((e) => ({ e, done: workingSets(e) }))
+    .filter(({ done }) => done.length > 0)
+    .map(({ e, done }) => ({
+      exerciseId: e.exerciseId,
+      sets: Math.min(done.length, 20),
+      reps: Math.min(Math.max(done[done.length - 1].reps, 1), 100),
+      maxReps: null,
+      restSeconds: e.restSeconds ?? defaultRestSeconds,
+      autoProgress: false,
+      supersetGroup: e.supersetGroup,
+    }));
+  return { name, exercises };
 }
 
 /** Indexes of the exercises in the same superset as the one at `index`, in order. */

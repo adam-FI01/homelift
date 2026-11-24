@@ -4,11 +4,13 @@ import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { Exercise } from '../exercises/exercise';
 import { ExerciseService } from '../exercises/exercise.service';
+import { problemMessage } from '../exercises/exercise.service';
+import { RoutineService } from '../routines/routine.service';
 import { SettingsService } from '../settings/settings.service';
 import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
-import { Workout, formatDuration, workingSets } from '../workout/workout';
+import { Workout, formatDuration, routineFromWorkout, workingSets } from '../workout/workout';
 import { WorkoutService } from '../workout/workout.service';
 import { WorkoutSummary, describeSets } from './history';
 import { HistoryService } from './history.service';
@@ -59,6 +61,7 @@ export class HistoryPage {
   private readonly confirm = inject(ConfirmService);
   private readonly settings = inject(SettingsService);
   private readonly exercisesApi = inject(ExerciseService);
+  private readonly routines = inject(RoutineService);
 
   protected readonly tab = signal<Tab>('workouts');
   protected readonly limit = signal(PAGE);
@@ -129,12 +132,50 @@ export class HistoryPage {
   });
 
   protected readonly notesDraft = signal('');
+  /** "Save as routine" in the detail sheet: null when closed, else the name being typed. */
+  protected readonly routineName = signal<string | null>(null);
+  protected readonly routineSaved = signal<string | null>(null);
+  protected readonly routineBusy = signal(false);
+  protected readonly routineError = signal<string | null>(null);
 
   protected open(w: WorkoutSummary): void {
     this.workouts.get(w.id).subscribe((full) => {
       this.notesDraft.set(full.notes ?? '');
+      this.resetRoutine();
       this.detail.set(full);
     });
+  }
+
+  private resetRoutine(): void {
+    this.routineName.set(null);
+    this.routineSaved.set(null);
+    this.routineError.set(null);
+  }
+
+  protected startSaveRoutine(): void {
+    this.routineName.set(this.detail()?.name ?? '');
+  }
+
+  /** Turns this past workout into a routine: working sets and the last rep count per exercise. */
+  protected saveRoutine(): void {
+    const w = this.detail();
+    const name = this.routineName()?.trim();
+    if (!w || !name || this.routineBusy()) return;
+    this.routineBusy.set(true);
+    this.routineError.set(null);
+    this.routines
+      .save(undefined, routineFromWorkout(w, name, this.settings.settings().defaultRestSeconds))
+      .subscribe({
+        next: (r) => {
+          this.routineBusy.set(false);
+          this.routineName.set(null);
+          this.routineSaved.set(r.name);
+        },
+        error: (err: unknown) => {
+          this.routineBusy.set(false);
+          this.routineError.set(problemMessage(err));
+        },
+      });
   }
 
   protected saveNotes(): void {

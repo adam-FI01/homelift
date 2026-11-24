@@ -128,6 +128,38 @@
       @if (notesDraft().trim() !== (w.notes ?? '')) {
         <button type="button" class="btn-primary" (click)="saveNotes()">Save notes</button>
       }
+      @if (routineSaved(); as saved) {
+        <p class="sub saved" role="status">Saved as routine "{{ saved }}".</p>
+      } @else if (d.exercises.length > 0) {
+        @if (routineName() === null) {
+          <button type="button" class="secondary" (click)="startSaveRoutine()">
+            Save as routine
+          </button>
+        } @else {
+          <label class="notes">
+            <span>Routine name</span>
+            <input
+              class="field"
+              maxlength="60"
+              autocomplete="off"
+              placeholder="e.g. Push A"
+              [value]="routineName()"
+              (input)="routineName.set($any($event.target).value)"
+            />
+          </label>
+          @if (routineError(); as err) {
+            <p class="sub" role="alert">{{ err }}</p>
+          }
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="routineBusy() || !routineName()?.trim()"
+            (click)="saveRoutine()"
+          >
+            Save routine
+          </button>
+        }
+      }
       <button type="button" class="delete" (click)="remove()">Delete workout</button>
     }
   }

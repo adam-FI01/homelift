@@ -7,6 +7,7 @@ import {
   nextSetDefaults,
   progressionHint,
   roundToStep,
+  routineFromWorkout,
 } from './workout';
 
 function exercise(overrides: Partial<WorkoutExercise> = {}): WorkoutExercise {
@@ -263,5 +264,44 @@ describe('progressionHint after missed sessions', () => {
   it('rounds to the nearest step', () => {
     expect(roundToStep(56.2, 2.5)).toBe(55);
     expect(roundToStep(57.4, 2.5)).toBe(57.5);
+  });
+});
+
+describe('routineFromWorkout', () => {
+  const set = (id: number, reps: number, warmup = false) => ({
+    id,
+    setNumber: id,
+    weightKg: 50,
+    reps,
+    warmup,
+  });
+  const workout = (exercises: WorkoutExercise[]) => ({ exercises }) as Workout;
+
+  it('saves working sets and the last rep count, skipping warm-ups', () => {
+    const w = workout([exercise({ sets: [set(1, 12, true), set(2, 8), set(3, 6)] })]);
+    expect(routineFromWorkout(w, 'Push', 90)).toEqual({
+      name: 'Push',
+      exercises: [
+        {
+          exerciseId: 1,
+          sets: 2,
+          reps: 6,
+          maxReps: null,
+          restSeconds: 90,
+          autoProgress: false,
+          supersetGroup: null,
+        },
+      ],
+    });
+  });
+
+  it('leaves out exercises with no working sets and keeps supersets and rest', () => {
+    const w = workout([
+      exercise({ exerciseId: 1, sets: [set(1, 5)], restSeconds: 120, supersetGroup: 1 }),
+      exercise({ exerciseId: 2, sets: [set(2, 10, true)] }),
+    ]);
+    const r = routineFromWorkout(w, 'A', 90);
+    expect(r.exercises).toHaveLength(1);
+    expect(r.exercises[0]).toMatchObject({ restSeconds: 120, supersetGroup: 1 });
   });
 });

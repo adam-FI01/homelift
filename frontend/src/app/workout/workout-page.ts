@@ -34,6 +34,7 @@ import {
   formatDuration,
   nextSetDefaults,
   progressionHint,
+  routineFromWorkout,
   supersetOf,
   workingSets,
 } from './workout';
@@ -361,21 +362,12 @@ export class WorkoutPage {
     const w = this.workout();
     const name = this.routineName()?.trim();
     if (!w || !name || this.busy()) return;
-    const exercises = w.exercises
-      .map((e) => ({ e, done: workingSets(e) }))
-      .filter(({ done }) => done.length > 0)
-      .map(({ e, done }) => ({
-        exerciseId: e.exerciseId,
-        sets: Math.min(done.length, 20),
-        reps: Math.min(Math.max(done[done.length - 1].reps, 1), 100),
-        maxReps: null,
-        restSeconds: e.restSeconds ?? this.settings.settings().defaultRestSeconds,
-        autoProgress: false,
-        supersetGroup: e.supersetGroup,
-      }));
     this.busy.set(true);
     this.error.set(null);
-    this.routines.save(undefined, { name, exercises }).subscribe({
+    this.routines.save(
+      undefined,
+      routineFromWorkout(w, name, this.settings.settings().defaultRestSeconds),
+    ).subscribe({
       next: (r) => {
         this.busy.set(false);
         this.routineName.set(null);

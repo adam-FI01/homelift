@@ -5,6 +5,11 @@ version may need you to do something when upgrading; minor and patch versions ne
 
 ## [Unreleased]
 
+### Added
+
+- **Save a past workout as a routine.** Open a workout in History and tap Save as routine. The name is
+  filled in from the workout, and each exercise is saved with the sets you did and your last rep count.
+
 ## [1.1.0] - 2026-11-22
 
 More of what you do at the gym works without a signal, progression gets smarter, and you can bring
