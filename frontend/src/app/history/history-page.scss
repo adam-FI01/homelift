@@ -185,18 +185,3 @@ a.row svg {
   color: var(--ink);
   text-decoration: none;
 }
-.delete {
-  align-self: center;
-  border: 0;
-  background: none;
-  color: var(--neg);
-  font-size: 14px;
-  padding: 8px;
-}
-.notes {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--sub);
-}

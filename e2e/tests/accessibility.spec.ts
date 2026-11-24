@@ -127,6 +127,30 @@ for (const theme of THEMES) {
       await page.getByRole('button', { name: 'Finish', exact: true }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await scan(page, `finish sheet, ${theme.toLowerCase()}`, theme);
+
+      // The routine name is marked as required, and leaving it empty shows an inline error.
+      const dialog = page.getByRole('dialog');
+      await dialog.getByRole('button', { name: 'Save as routine' }).click();
+      await dialog.getByRole('textbox', { name: /Routine name/ }).fill('');
+      await dialog.getByRole('button', { name: 'Save routine' }).click();
+      await expect(dialog.getByText('Enter a name for the routine.')).toBeVisible();
+      await scan(page, `finish sheet with an error, ${theme.toLowerCase()}`, theme);
+      await dialog.getByRole('button', { name: 'Keep going' }).click();
+
+      // A confirmation dialog.
+      await page.getByRole('button', { name: 'Discard workout' }).click();
+      await expect(page.getByRole('dialog', { name: 'Discard this workout?' })).toBeVisible();
+      await scan(page, `confirm dialog, ${theme.toLowerCase()}`, theme);
+    });
+
+    test('body, logging inline', async ({ page }) => {
+      await page.goto('/body');
+      await page.getByRole('button', { name: 'Log', exact: true }).click();
+      await expect(page.getByRole('textbox', { name: /Weight/ })).toBeVisible();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+      await expect(page.getByText('Enter a number greater than 0.')).toBeVisible();
+      await scan(page, `body log form, ${theme.toLowerCase()}`, theme);
     });
 
     test('routine editor with the exercise picker open', async ({ page }) => {

@@ -46,16 +46,18 @@ import { Component, ElementRef, effect, input, output, viewChild } from '@angula
       border-radius: 20px 20px 0 0;
       background: var(--surface);
       color: var(--ink);
+      overscroll-behavior: contain;
+      box-shadow: 0 -2px 24px rgb(0 0 0 / 0.2);
       animation: up 0.2s ease-out;
     }
     dialog::backdrop {
-      background: rgb(0 0 0 / 0.4);
+      background: rgb(0 0 0 / 0.6);
       animation: fade 0.2s ease-out;
     }
     .panel {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
       padding: 8px 20px calc(env(safe-area-inset-bottom) + 20px);
     }
     .grabber {
@@ -73,15 +75,15 @@ import { Component, ElementRef, effect, input, output, viewChild } from '@angula
     }
     h2 {
       margin: 0;
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 20px;
+      font-weight: 700;
       letter-spacing: -0.01em;
     }
     .close {
       flex: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 18px;
+      width: 44px;
+      height: 44px;
+      border-radius: 22px;
       border: 0;
       background: var(--soft);
       color: var(--ink);

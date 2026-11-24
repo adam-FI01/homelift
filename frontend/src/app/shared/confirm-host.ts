@@ -15,13 +15,12 @@ import { Sheet } from './sheet';
         <div class="actions">
           <button
             type="button"
-            class="btn-primary"
-            [class.danger]="p.danger"
+            [class]="p.danger ? 'btn-danger' : 'btn-primary'"
             (click)="confirm.answer(true)"
           >
             {{ p.confirmLabel }}
           </button>
-          <button type="button" class="secondary" (click)="confirm.answer(false)">
+          <button type="button" class="btn-secondary" (click)="confirm.answer(false)">
             {{ p.cancelLabel ?? 'Cancel' }}
           </button>
         </div>
@@ -31,26 +30,14 @@ import { Sheet } from './sheet';
   styles: `
     .message {
       margin: 0;
-      color: var(--sub);
-      font-size: 15px;
+      color: var(--ink);
+      font-size: 16px;
       line-height: 1.5;
     }
     .actions {
       display: flex;
       flex-direction: column;
       gap: 10px;
-    }
-    .danger {
-      background: var(--neg);
-      color: #fff;
-    }
-    .secondary {
-      height: 48px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-control);
-      background: var(--surface);
-      color: var(--ink);
-      font-weight: 500;
     }
   `,
 })

@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { ConfirmService } from '../shared/confirm.service';
+import { ToastService } from '../shared/toast.service';
 import { RestTimer } from './rest-timer.service';
 import { Workout } from './workout';
 import { WorkoutPage } from './workout-page';
@@ -235,5 +236,46 @@ describe('WorkoutPage', () => {
     req.flush({ id: 3, name: 'Push Day', exercises: [], totalSets: 1, estimatedMinutes: 5 });
     await fixture.whenStable();
     expect(el.textContent).toContain('Saved as routine "Push Day"');
+  });
+
+  it('asks for a routine name instead of silently doing nothing', async () => {
+    const { fixture, el, button, http } = await setup(WORKOUT);
+    button('Finish').click();
+    await fixture.whenStable();
+    button('Save as routine').click();
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Required');
+    const input = el.querySelector('#routine-name') as HTMLInputElement;
+    expect(input.getAttribute('aria-required')).toBe('true');
+    input.value = '  ';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    button('Save routine').click();
+    await fixture.whenStable();
+    http.expectNone({ method: 'POST', url: '/api/routines' });
+    expect(el.querySelector('#routine-name-error')?.textContent).toContain('Enter a name');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('shows a toast when the workout is finished', async () => {
+    const { fixture, button, http } = await setup(WORKOUT);
+    button('Finish').click();
+    await fixture.whenStable();
+    button('Finish workout').click();
+    http.expectOne({ method: 'POST', url: '/api/workouts/7/finish' }).flush(WORKOUT);
+    await fixture.whenStable();
+    expect(TestBed.inject(ToastService).current()?.message).toBe('Workout finished');
+  });
+
+  it('shows the plate calculator inline, not in a dialog', async () => {
+    const { fixture, el, button } = await setup(WORKOUT);
+    button('Plates for').click();
+    await fixture.whenStable();
+    expect(el.querySelector('app-plate-calculator')).not.toBeNull();
+    expect(el.querySelector('#plates-panel')).not.toBeNull();
+    button('Hide plates').click();
+    await fixture.whenStable();
+    expect(el.querySelector('app-plate-calculator')).toBeNull();
   });
 });

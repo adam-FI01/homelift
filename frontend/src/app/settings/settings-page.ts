@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { problemMessage } from '../exercises/exercise.service';
-import { Sheet } from '../shared/sheet';
+import { ToastService } from '../shared/toast.service';
 import { catchError, of } from 'rxjs';
 import { formatDuration } from '../workout/workout';
 import { Settings, Theme, Units } from './settings';
@@ -25,7 +25,7 @@ type Toggle = 'autoStartRest' | 'restSound' | 'restVibrate';
 /** Rest timer, units, theme, and your data. Every change saves straight away. */
 @Component({
   selector: 'app-settings-page',
-  imports: [RouterLink, Sheet],
+  imports: [RouterLink],
   templateUrl: './settings-page.html',
   styleUrl: './settings-page.scss',
 })
@@ -94,9 +94,10 @@ export class SettingsPage {
 
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   /** Which PIN sheet is open, and its fields. */
-  protected readonly pinSheet = signal<'set' | 'change' | 'remove' | null>(null);
+  protected readonly pinForm = signal<'set' | 'change' | 'remove' | null>(null);
   protected readonly currentPin = signal('');
   protected readonly newPin = signal('');
   protected readonly confirmPin = signal('');
@@ -111,14 +112,18 @@ export class SettingsPage {
     this.newPin.set('');
     this.confirmPin.set('');
     this.pinError.set(null);
-    this.pinSheet.set(kind);
+    this.pinForm.set(kind);
+    setTimeout(() => document.getElementById(kind === 'set' ? 'pin-new' : 'pin-current')?.focus());
   }
 
   protected savePin(): void {
-    const kind = this.pinSheet();
+    const kind = this.pinForm();
     if (kind === 'remove') {
       this.auth.removePin(this.currentPin()).subscribe({
-        next: () => this.pinSheet.set(null),
+        next: () => {
+          this.pinForm.set(null);
+          this.toast.show('PIN turned off');
+        },
         error: (e: unknown) => this.pinError.set(problemMessage(e)),
       });
       return;
@@ -132,7 +137,10 @@ export class SettingsPage {
       return;
     }
     this.auth.setPin(this.newPin(), kind === 'change' ? this.currentPin() : undefined).subscribe({
-      next: () => this.pinSheet.set(null),
+      next: () => {
+        this.pinForm.set(null);
+        this.toast.show(kind === 'change' ? 'PIN changed' : 'PIN set');
+      },
       error: (e: unknown) => this.pinError.set(problemMessage(e)),
     });
   }
