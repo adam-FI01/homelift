@@ -1,24 +1,31 @@
 <header class="top">
   <a routerLink="/routines" class="cancel">Cancel</a>
   <span class="title">{{ id() ? 'Edit routine' : 'New routine' }}</span>
-  <button type="button" class="save" [disabled]="saving() || !canSave()" (click)="save()">
-    Save
-  </button>
+  <button type="button" class="save" [disabled]="saving()" (click)="save()">Save</button>
 </header>
 
 @if (loadFailed()) {
   <p class="card sub">Couldn't load this routine.</p>
 } @else {
-  <label class="card name">
-    <span class="sub">Routine name</span>
+  <div class="card name" [class.invalid]="nameError()">
+    <label class="name-label" for="routine-name">
+      Routine name <span class="req">Required</span>
+    </label>
     <input
+      id="routine-name"
       placeholder="e.g. Push A"
       maxlength="60"
       autocomplete="off"
+      aria-required="true"
+      [attr.aria-invalid]="nameError()"
+      [attr.aria-describedby]="nameError() ? 'routine-name-error' : null"
       [value]="name()"
-      (input)="name.set($any($event.target).value)"
+      (input)="name.set($any($event.target).value); nameError.set(false)"
     />
-  </label>
+    @if (nameError()) {
+      <p id="routine-name-error" class="field-error" role="alert">Enter a name for the routine.</p>
+    }
+  </div>
 
   @if (error(); as message) {
     <p class="error" role="alert">{{ message }}</p>

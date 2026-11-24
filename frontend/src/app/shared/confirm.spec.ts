@@ -25,7 +25,7 @@ describe('ConfirmService', () => {
     await fixture.whenStable();
     expect(el.textContent).toContain('Delete Push?');
     expect(el.textContent).toContain('Workouts are kept.');
-    expect(button('Delete').classList).toContain('danger');
+    expect(button('Delete').classList).toContain('btn-danger');
 
     button('Delete').click();
     expect(await answer).toBe(true);

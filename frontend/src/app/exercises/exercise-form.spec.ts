@@ -24,7 +24,12 @@ describe('ExerciseForm', () => {
   it('creates an exercise once every field is filled in', async () => {
     const { fixture, http, el, button, navigate } = setup();
     const save = button('Save');
-    expect(save.disabled).toBe(true);
+    // Tapping Save too early says what is still missing instead of doing nothing.
+    save.click();
+    await fixture.whenStable();
+    expect(el.querySelector('[role=alert]')?.textContent).toContain(
+      'a name, a muscle group, the equipment',
+    );
 
     const name = el.querySelector('input')!;
     name.value = 'Cable Lateral Raise';
@@ -32,7 +37,7 @@ describe('ExerciseForm', () => {
     button('Shoulders').click();
     button('Cable').click();
     await fixture.whenStable();
-    expect(save.disabled).toBe(false);
+    expect(el.querySelector('[role=alert]')).toBeNull();
 
     save.click();
     const req = http.expectOne({ method: 'POST', url: '/api/exercises' });

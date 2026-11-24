@@ -127,6 +127,45 @@ for (const theme of THEMES) {
       await page.getByRole('button', { name: 'Finish', exact: true }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await scan(page, `finish sheet, ${theme.toLowerCase()}`, theme);
+
+      await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+
+      // A confirmation dialog.
+      await page.getByRole('button', { name: 'Discard workout' }).click();
+      await expect(page.getByRole('dialog', { name: 'Discard this workout?' })).toBeVisible();
+      await scan(page, `confirm dialog, ${theme.toLowerCase()}`, theme);
+    });
+
+    test('finish sheet, routine name is required', async ({ page, request }) => {
+      // Only a workout that did not start from a routine offers "Save as routine".
+      const w = await (await request.post('/api/workouts', { data: { name: 'A11y adhoc' } })).json();
+      const added = await (
+        await request.post(`/api/workouts/${w.id}/exercises`, { data: { exerciseId: seeded.benchId } })
+      ).json();
+      await request.post(`/api/workouts/${w.id}/exercises/${added.exercises[0].id}/sets`, {
+        data: { weightKg: 60, reps: 8 },
+      });
+      await page.goto('/workout');
+      await page.getByRole('button', { name: 'Finish', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      await dialog.getByRole('button', { name: 'Save as routine' }).click();
+      await expect(dialog.getByText('Required')).toBeVisible();
+      await dialog.getByRole('textbox', { name: /Routine name/ }).fill('');
+      await dialog.getByRole('button', { name: 'Save routine' }).click();
+      await expect(dialog.getByText('Enter a name for the routine.')).toBeVisible();
+      await scan(page, `finish sheet with an error, ${theme.toLowerCase()}`, theme);
+    });
+
+    test('body, logging inline', async ({ page }) => {
+      await page.goto('/body');
+      await page.getByRole('button', { name: 'Log', exact: true }).click();
+      const value = page.getByRole('textbox', { name: /Weight/ });
+      await expect(value).toBeVisible();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await value.fill('');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+      await expect(page.getByText('Enter a number greater than 0.')).toBeVisible();
+      await scan(page, `body log form, ${theme.toLowerCase()}`, theme);
     });
 
     test('routine editor with the exercise picker open', async ({ page }) => {

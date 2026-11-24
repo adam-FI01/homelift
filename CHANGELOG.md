@@ -5,6 +5,29 @@ version may need you to do something when upgrading; minor and patch versions ne
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-24
+
+Sheets and dialogs are easier to read and use, and the app now tells you when something saved.
+
+### Changed
+
+- **Clearer sheets and dialogs.** Bigger, darker text, a stronger backdrop, and a clear button order: one
+  filled main button, an outlined second one, and quiet text for the rest. Delete actions are red.
+- **Required fields are marked.** Routine name, exercise name, body value and PINs say "Required". Saving
+  with something missing now shows what is wrong right under the field instead of a button that does nothing.
+- **The page behind a sheet no longer scrolls** while a sheet or confirmation is open.
+- **Fewer pop-ups.** The plate calculator opens under the weight, logging body measurements and setting,
+  changing or turning off the PIN happen on the page itself. Sheets stay for confirmations and short
+  tasks (finish workout, edit a set, pick exercises, a past workout).
+
+### Added
+
+- **Save a past workout as a routine.** Open a workout in History and tap Save as routine. The name is
+  filled in from the workout, and each exercise is saved with the sets you did and your last rep count.
+- **Confirmation messages.** A short message appears after you save or delete something: routine saved,
+  workout finished (or saved on the phone while offline), notes saved, set updated or deleted, exercise
+  saved or archived, body entry saved or deleted, PIN set, changed or turned off.
+
 ## [1.1.0] - 2026-11-22
 
 More of what you do at the gym works without a signal, progression gets smarter, and you can bring
@@ -90,6 +113,7 @@ The first release: everything you need to log training on your own server.
 - From the 0.1 preview: back up `homelift.db`, then pull and restart. Database migrations V2 to V7 run on
   start-up and only add tables and columns.
 
-[Unreleased]: https://github.com/adam-FI01/homelift/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/adam-FI01/homelift/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/adam-FI01/homelift/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/adam-FI01/homelift/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/adam-FI01/homelift/releases/tag/v1.0.0

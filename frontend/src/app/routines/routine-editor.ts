@@ -4,6 +4,7 @@ import { Exercise } from '../exercises/exercise';
 import { problemMessage } from '../exercises/exercise.service';
 import { SettingsService } from '../settings/settings.service';
 import { ConfirmService } from '../shared/confirm.service';
+import { ToastService } from '../shared/toast.service';
 import { Sheet } from '../shared/sheet';
 import { ExercisePicker } from '../workout/exercise-picker';
 import { formatDuration } from '../workout/workout';
@@ -30,6 +31,7 @@ export class RoutineEditor implements OnInit {
   private readonly api = inject(RoutineService);
   private readonly router = inject(Router);
   private readonly confirm = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
   private readonly settings = inject(SettingsService);
   protected readonly unit = this.settings.unitLabel;
   protected readonly weightStep = this.settings.weightStep;
@@ -151,7 +153,14 @@ export class RoutineEditor implements OnInit {
     this.open.update((o) => (o === index ? null : index));
   }
 
+  protected readonly nameError = signal(false);
+
   protected save(): void {
+    if (!this.name().trim()) {
+      this.nameError.set(true);
+      document.getElementById('routine-name')?.focus();
+      return;
+    }
     if (!this.canSave()) return;
     this.saving.set(true);
     this.error.set(null);
@@ -170,7 +179,10 @@ export class RoutineEditor implements OnInit {
       })),
     };
     this.api.save(this.id(), input).subscribe({
-      next: () => this.router.navigate(['/routines']),
+      next: (r) => {
+        this.toast.show(`Routine "${r.name}" saved`);
+        this.router.navigate(['/routines']);
+      },
       error: (err: unknown) => {
         this.saving.set(false);
         this.error.set(problemMessage(err));
@@ -189,7 +201,10 @@ export class RoutineEditor implements OnInit {
     });
     if (!ok) return;
     this.api.delete(id).subscribe({
-      next: () => this.router.navigate(['/routines']),
+      next: () => {
+        this.toast.show('Routine deleted');
+        this.router.navigate(['/routines']);
+      },
       error: (err: unknown) => this.error.set(problemMessage(err)),
     });
   }

@@ -182,7 +182,7 @@ feature/* ──PR──► qa ──PR──► main ──► ghcr.io/adam-fi0
 - Both branches are protected. Changes need a pull request with passing checks, and force pushes and deletion are blocked.
 - Pull requests run the frontend and backend tests plus a quick amd64 image build. The full amd64 + arm64 image is built and published **only from `main`**.
 - **Releasing** a version: bump the version in `backend/pom.xml` and `frontend/package.json`, move the `Unreleased` notes in [`CHANGELOG.md`](CHANGELOG.md) under the new version, merge `qa` into `main`, then tag that merge commit (`git tag v1.2.3 && git push origin v1.2.3`). The tag publishes `:1.2.3` and `:1.2` images and creates the GitHub release from the changelog. Tags on any commit not on `main` are refused.
-- To stay on a version, use `ghcr.io/adam-fi01/homelift:1.1.0` (or `:1.1` for patch updates) instead of `:latest`.
+- To stay on a version, use `ghcr.io/adam-fi01/homelift:1.1.1` (or `:1.1` for patch updates) instead of `:latest`.
 
 ## Roadmap
 

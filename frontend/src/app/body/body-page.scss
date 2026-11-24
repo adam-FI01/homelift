@@ -139,3 +139,15 @@
   opacity: 0.4;
   cursor: default;
 }
+
+.log-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.log-form h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
