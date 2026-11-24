@@ -6,7 +6,7 @@ import { formatNumber } from '../settings/settings';
 import { SettingsService } from '../settings/settings.service';
 import { ConfirmService } from '../shared/confirm.service';
 import { LineChart } from '../shared/line-chart';
-import { Sheet } from '../shared/sheet';
+import { ToastService } from '../shared/toast.service';
 import { isoDate, localDate } from '../stats/stats';
 import { BODY_KINDS, BodyKind, BodyMetric, bodyUnit, toShown, toStored } from './body';
 import { BodyService } from './body.service';
@@ -14,7 +14,7 @@ import { BodyService } from './body.service';
 /** Track body weight and measurements over time. */
 @Component({
   selector: 'app-body-page',
-  imports: [RouterLink, LineChart, Sheet],
+  imports: [RouterLink, LineChart],
   templateUrl: './body-page.html',
   styleUrl: './body-page.scss',
 })
@@ -22,6 +22,7 @@ export class BodyPage {
   private readonly api = inject(BodyService);
   private readonly settings = inject(SettingsService);
   private readonly confirm = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
 
   protected readonly kinds = BODY_KINDS;
   protected readonly kind = signal<BodyKind>('WEIGHT');
@@ -58,22 +59,31 @@ export class BodyPage {
   protected readonly logging = signal(false);
   protected readonly draftDate = signal(isoDate(new Date()));
   protected readonly draftValue = signal('');
+  protected readonly valueError = signal(false);
 
   protected startLog(): void {
     const latest = this.latest();
     this.draftDate.set(isoDate(new Date()));
     this.draftValue.set(latest ? String(latest.value) : '');
+    this.valueError.set(false);
     this.logging.set(true);
+    setTimeout(() => document.getElementById('body-value')?.focus());
   }
 
   protected save(): void {
     const value = Number(this.draftValue().replace(',', '.'));
-    if (!(value > 0) || !this.draftDate()) return;
+    if (!(value > 0)) {
+      this.valueError.set(true);
+      document.getElementById('body-value')?.focus();
+      return;
+    }
+    if (!this.draftDate()) return;
     this.api
       .save(this.draftDate(), this.kind(), toStored(this.kind(), value, this.settings.units()))
       .subscribe(() => {
         this.logging.set(false);
         this.version.update((v) => v + 1);
+        this.toast.show(`${this.label()} saved`);
       });
   }
 
@@ -84,7 +94,11 @@ export class BodyPage {
       confirmLabel: 'Delete',
       danger: true,
     });
-    if (ok) this.api.delete(e.id).subscribe(() => this.version.update((v) => v + 1));
+    if (!ok) return;
+    this.api.delete(e.id).subscribe(() => {
+      this.version.update((v) => v + 1);
+      this.toast.show('Entry deleted');
+    });
   }
 
   protected fmt(n: number): string {

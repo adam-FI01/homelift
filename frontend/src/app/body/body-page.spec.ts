@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { ToastService } from '../shared/toast.service';
 import { toShown, toStored } from './body';
 import { BodyPage } from './body-page';
 
@@ -47,5 +48,40 @@ describe('BodyPage', () => {
     const req = http.expectOne({ method: 'PUT', url: '/api/body' });
     expect(req.request.body.value).toBe(81.2);
     expect(req.request.body.kind).toBe('WEIGHT');
+  });
+
+  it('logs inline (no dialog), asks for a value, and confirms with a toast', async () => {
+    TestBed.configureTestingModule({
+      imports: [BodyPage],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+    const fixture = TestBed.createComponent(BodyPage);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    http.expectOne((r) => r.url === '/api/body').flush([]);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const btn = (t: string) =>
+      [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === t)!;
+
+    btn('Log').click();
+    await fixture.whenStable();
+    expect(el.querySelector('dialog')).toBeNull();
+    expect(el.textContent).toContain('Required');
+
+    btn('Save').click();
+    await fixture.whenStable();
+    http.expectNone({ method: 'PUT', url: '/api/body' });
+    expect(el.querySelector('[role=alert]')?.textContent).toContain('greater than 0');
+
+    const value = el.querySelector('#body-value') as HTMLInputElement;
+    value.value = '80';
+    value.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    btn('Save').click();
+    http.expectOne({ method: 'PUT', url: '/api/body' }).flush({});
+    await fixture.whenStable();
+    expect(TestBed.inject(ToastService).current()?.message).toBe('Weight saved');
   });
 });

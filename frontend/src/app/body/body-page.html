@@ -30,6 +30,48 @@
   }
 </nav>
 
+@if (logging()) {
+  <form
+    class="card log-form"
+    (submit)="$event.preventDefault(); save()"
+    aria-labelledby="log-title"
+    novalidate
+  >
+    <h2 id="log-title">Log {{ label().toLowerCase() }}</h2>
+    <label class="form-field">
+      <span class="label">Date <span class="req">Required</span></span>
+      <input
+        class="field"
+        type="date"
+        aria-required="true"
+        [value]="draftDate()"
+        (input)="draftDate.set($any($event.target).value)"
+      />
+    </label>
+    <div class="form-field" [class.invalid]="valueError()">
+      <label class="label" for="body-value">
+        {{ label() }} ({{ unit() }}) <span class="req">Required</span>
+      </label>
+      <input
+        id="body-value"
+        class="field"
+        inputmode="decimal"
+        autocomplete="off"
+        aria-required="true"
+        [attr.aria-invalid]="valueError()"
+        [attr.aria-describedby]="valueError() ? 'body-value-error' : null"
+        [value]="draftValue()"
+        (input)="draftValue.set($any($event.target).value); valueError.set(false)"
+      />
+      @if (valueError()) {
+        <p id="body-value-error" class="field-error" role="alert">Enter a number greater than 0.</p>
+      }
+    </div>
+    <button type="submit" class="btn-primary">Save</button>
+    <button type="button" class="btn-quiet" (click)="logging.set(false)">Cancel</button>
+  </form>
+}
+
 @if (entries() === undefined) {
   <p class="sub">Loading…</p>
 } @else if (latest(); as l) {
@@ -79,33 +121,3 @@
     </button>
   </section>
 }
-
-<app-sheet
-  [title]="'Log ' + label().toLowerCase()"
-  [open]="logging()"
-  (closed)="logging.set(false)"
->
-  @if (logging()) {
-    <label class="field">
-      <span>Date</span>
-      <input type="date" [value]="draftDate()" (input)="draftDate.set($any($event.target).value)" />
-    </label>
-    <label class="field">
-      <span>{{ label() }} ({{ unit() }})</span>
-      <input
-        inputmode="decimal"
-        autocomplete="off"
-        [value]="draftValue()"
-        (input)="draftValue.set($any($event.target).value)"
-      />
-    </label>
-    <button
-      type="button"
-      class="btn-primary"
-      [disabled]="!(+draftValue().replace(',', '.') > 0)"
-      (click)="save()"
-    >
-      Save
-    </button>
-  }
-</app-sheet>

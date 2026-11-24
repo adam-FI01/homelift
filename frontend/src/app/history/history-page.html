@@ -114,8 +114,8 @@
           </li>
         }
       </ul>
-      <label class="notes">
-        <span>Notes</span>
+      <label class="form-field">
+        <span class="label">Notes <span class="req">Optional</span></span>
         <textarea
           class="field"
           rows="2"
@@ -129,38 +129,51 @@
         <button type="button" class="btn-primary" (click)="saveNotes()">Save notes</button>
       }
       @if (routineSaved(); as saved) {
-        <p class="sub saved" role="status">Saved as routine "{{ saved }}".</p>
+        <p class="routine-box saved" role="status">Saved as routine "{{ saved }}".</p>
       } @else if (d.exercises.length > 0) {
-        @if (routineName() === null) {
-          <button type="button" class="secondary" (click)="startSaveRoutine()">
-            Save as routine
-          </button>
-        } @else {
-          <label class="notes">
-            <span>Routine name</span>
-            <input
-              class="field"
-              maxlength="60"
-              autocomplete="off"
-              placeholder="e.g. Push A"
-              [value]="routineName()"
-              (input)="routineName.set($any($event.target).value)"
-            />
-          </label>
-          @if (routineError(); as err) {
-            <p class="sub" role="alert">{{ err }}</p>
+        <div class="routine-box">
+          @if (routineName() === null) {
+            <button type="button" class="btn-secondary" (click)="startSaveRoutine()">
+              Save as routine
+            </button>
+          } @else {
+            <div class="form-field" [class.invalid]="routineNameError()">
+              <label class="label" for="history-routine-name">
+                Routine name <span class="req">Required</span>
+              </label>
+              <input
+                id="history-routine-name"
+                class="field"
+                maxlength="60"
+                autocomplete="off"
+                aria-required="true"
+                placeholder="e.g. Push A"
+                [attr.aria-invalid]="routineNameError()"
+                [attr.aria-describedby]="routineNameError() ? 'history-routine-name-error' : null"
+                [value]="routineName()"
+                (input)="routineName.set($any($event.target).value); routineNameError.set(false)"
+              />
+              @if (routineNameError()) {
+                <p id="history-routine-name-error" class="field-error" role="alert">
+                  Enter a name for the routine.
+                </p>
+              }
+            </div>
+            @if (routineError(); as err) {
+              <p class="field-error" role="alert">{{ err }}</p>
+            }
+            <button
+              type="button"
+              class="btn-secondary"
+              [disabled]="routineBusy()"
+              (click)="saveRoutine()"
+            >
+              Save routine
+            </button>
           }
-          <button
-            type="button"
-            class="secondary"
-            [disabled]="routineBusy() || !routineName()?.trim()"
-            (click)="saveRoutine()"
-          >
-            Save routine
-          </button>
-        }
+        </div>
       }
-      <button type="button" class="delete" (click)="remove()">Delete workout</button>
+      <button type="button" class="btn-quiet destructive" (click)="remove()">Delete workout</button>
     }
   }
 </app-sheet>

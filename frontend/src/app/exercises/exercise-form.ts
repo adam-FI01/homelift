@@ -10,8 +10,9 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Observable, of, switchMap } from 'rxjs';
-import { ACCEPT, PreparedMedia, prepareMedia } from '../shared/media';
 import { SettingsService } from '../settings/settings.service';
+import { ACCEPT, PreparedMedia, prepareMedia } from '../shared/media';
+import { ToastService } from '../shared/toast.service';
 import { formatDuration } from '../workout/workout';
 import { EQUIPMENT, Equipment, Exercise, MUSCLE_GROUPS, MuscleGroup, label } from './exercise';
 import { ExerciseService, problemMessage } from './exercise.service';
@@ -29,9 +30,9 @@ import { ExerciseService, problemMessage } from './exercise.service';
     @if (loadFailed()) {
       <p class="card sub">Couldn't load this exercise.</p>
     } @else {
-      <form class="card form" (submit)="save($event)">
+      <form class="card form" novalidate (submit)="save($event)">
         <label class="field">
-          <span>Name</span>
+          <span>Name <span class="req">Required</span></span>
           <input
             name="name"
             required
@@ -44,7 +45,7 @@ import { ExerciseService, problemMessage } from './exercise.service';
         </label>
 
         <fieldset>
-          <legend>Muscle group</legend>
+          <legend>Muscle group <span class="req">Required</span></legend>
           <div class="options">
             @for (m of muscleGroups; track m) {
               <button
@@ -61,7 +62,7 @@ import { ExerciseService, problemMessage } from './exercise.service';
         </fieldset>
 
         <fieldset>
-          <legend>Equipment</legend>
+          <legend>Equipment <span class="req">Required</span></legend>
           <div class="options">
             @for (eq of equipmentOptions; track eq) {
               <button
@@ -179,7 +180,10 @@ import { ExerciseService, problemMessage } from './exercise.service';
           <p class="error" role="alert">{{ message }}</p>
         }
 
-        <button class="btn-primary" type="submit" [disabled]="saving() || !canSave()">
+        @if (missing(); as m) {
+          <p class="missing" role="alert">{{ m }}</p>
+        }
+        <button class="btn-primary" type="submit" [disabled]="saving()">
           {{ saving() ? 'Saving…' : 'Save' }}
         </button>
       </form>
@@ -291,18 +295,30 @@ import { ExerciseService, problemMessage } from './exercise.service';
     }
     .field span,
     legend {
-      font-size: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .req {
+      font-size: 13px;
       font-weight: 500;
       color: var(--sub);
+      margin-left: 6px;
     }
     input {
       height: var(--tap);
       padding: 0 14px;
-      border: 1px solid var(--line);
+      border: 1.5px solid var(--field-line);
       border-radius: var(--radius-control);
-      background: var(--bg);
+      background: var(--surface);
       color: var(--ink);
       font: inherit;
+    }
+    .missing {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--neg);
     }
     fieldset {
       border: 0;
@@ -360,6 +376,7 @@ import { ExerciseService, problemMessage } from './exercise.service';
 export class ExerciseForm implements OnInit {
   private readonly api = inject(ExerciseService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
   private readonly settings = inject(SettingsService);
 
   /** Bound from the :id route parameter; absent when adding. */
@@ -416,6 +433,19 @@ export class ExerciseForm implements OnInit {
     }
   }
 
+  protected readonly attempted = signal(false);
+
+  /** What is still missing, shown after the first tap on Save. */
+  protected missing(): string | null {
+    if (!this.attempted()) return null;
+    const list = [
+      this.name().trim() ? null : 'a name',
+      this.muscleGroup() ? null : 'a muscle group',
+      this.equipment() ? null : 'the equipment',
+    ].filter((m) => m !== null);
+    return list.length ? `Still needed: ${list.join(', ')}.` : null;
+  }
+
   protected canSave(): boolean {
     return (
       this.name().trim().length > 0 && this.muscleGroup() !== null && this.equipment() !== null
@@ -426,7 +456,10 @@ export class ExerciseForm implements OnInit {
     event.preventDefault();
     const muscleGroup = this.muscleGroup();
     const equipment = this.equipment();
-    if (!this.canSave() || !muscleGroup || !equipment) return;
+    if (!this.canSave() || !muscleGroup || !equipment) {
+      this.attempted.set(true);
+      return;
+    }
 
     const input = {
       name: this.name().trim(),
@@ -449,7 +482,10 @@ export class ExerciseForm implements OnInit {
             : of(saved),
       ),
     );
-    this.run(request, () => this.router.navigate(['/exercises']));
+    this.run(request, (saved) => {
+      this.toast.show(`${saved.name} saved`);
+      this.router.navigate(['/exercises']);
+    });
   }
 
   protected toggleArchived(): void {
@@ -457,6 +493,7 @@ export class ExerciseForm implements OnInit {
     if (!id) return;
     this.run(this.archived() ? this.api.restore(id) : this.api.archive(id), (e) => {
       this.fill(e);
+      this.toast.show(e.archived ? `${e.name} archived` : `${e.name} restored`);
       if (e.archived) this.router.navigate(['/exercises']);
     });
   }

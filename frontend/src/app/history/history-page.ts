@@ -9,6 +9,7 @@ import { RoutineService } from '../routines/routine.service';
 import { SettingsService } from '../settings/settings.service';
 import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
+import { ToastService } from '../shared/toast.service';
 import { Sheet } from '../shared/sheet';
 import { Workout, formatDuration, routineFromWorkout, workingSets } from '../workout/workout';
 import { WorkoutService } from '../workout/workout.service';
@@ -59,6 +60,7 @@ export class HistoryPage {
   private readonly history = inject(HistoryService);
   private readonly workouts = inject(WorkoutService);
   private readonly confirm = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
   private readonly settings = inject(SettingsService);
   private readonly exercisesApi = inject(ExerciseService);
   private readonly routines = inject(RoutineService);
@@ -137,6 +139,7 @@ export class HistoryPage {
   protected readonly routineSaved = signal<string | null>(null);
   protected readonly routineBusy = signal(false);
   protected readonly routineError = signal<string | null>(null);
+  protected readonly routineNameError = signal(false);
 
   protected open(w: WorkoutSummary): void {
     this.workouts.get(w.id).subscribe((full) => {
@@ -153,6 +156,7 @@ export class HistoryPage {
   }
 
   protected startSaveRoutine(): void {
+    this.routineNameError.set(false);
     this.routineName.set(this.detail()?.name ?? '');
   }
 
@@ -160,7 +164,12 @@ export class HistoryPage {
   protected saveRoutine(): void {
     const w = this.detail();
     const name = this.routineName()?.trim();
-    if (!w || !name || this.routineBusy()) return;
+    if (!w || this.routineBusy()) return;
+    if (!name) {
+      this.routineNameError.set(true);
+      document.getElementById('history-routine-name')?.focus();
+      return;
+    }
     this.routineBusy.set(true);
     this.routineError.set(null);
     this.routines
@@ -170,6 +179,7 @@ export class HistoryPage {
           this.routineBusy.set(false);
           this.routineName.set(null);
           this.routineSaved.set(r.name);
+          this.toast.show(`Routine "${r.name}" saved`);
         },
         error: (err: unknown) => {
           this.routineBusy.set(false);
@@ -181,9 +191,10 @@ export class HistoryPage {
   protected saveNotes(): void {
     const w = this.detail();
     if (!w) return;
-    this.workouts
-      .saveNotes(w.id, this.notesDraft().trim())
-      .subscribe((updated) => this.detail.set(updated));
+    this.workouts.saveNotes(w.id, this.notesDraft().trim()).subscribe((updated) => {
+      this.detail.set(updated);
+      this.toast.show('Notes saved');
+    });
   }
 
   protected async remove(): Promise<void> {
@@ -199,6 +210,7 @@ export class HistoryPage {
     this.workouts.discard(w.id).subscribe(() => {
       this.removed.update((set) => new Set(set).add(w.id));
       this.detail.set(null);
+      this.toast.show('Workout deleted');
     });
   }
 

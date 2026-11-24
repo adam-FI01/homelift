@@ -19,6 +19,7 @@ import { SettingsService } from '../settings/settings.service';
 import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
 import { Sheet } from '../shared/sheet';
+import { ToastService } from '../shared/toast.service';
 import { ExercisePicker } from './exercise-picker';
 import { NewAction, OfflineQueue, withPending } from './offline-queue.service';
 import { OfflineStatus } from './offline-status';
@@ -61,6 +62,7 @@ export class WorkoutPage {
   private readonly router = inject(Router);
   private readonly rest = inject(RestTimer);
   private readonly confirm = inject(ConfirmService);
+  private readonly toast = inject(ToastService);
   protected readonly settings = inject(SettingsService);
 
   protected readonly unit = this.settings.unitLabel;
@@ -90,6 +92,7 @@ export class WorkoutPage {
   /** "Save as routine" on the finish sheet: null when closed, else the name being typed. */
   protected readonly routineName = signal<string | null>(null);
   protected readonly routineSaved = signal<string | null>(null);
+  protected readonly routineError = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -285,6 +288,7 @@ export class WorkoutPage {
       // Still only on this phone: change the waiting set itself.
       this.queue.editPending(queued, { weightKg, reps, warmup });
       this.editing.set(null);
+      this.toast.show('Set updated');
       return;
     }
     this.runOrQueue(
@@ -300,9 +304,13 @@ export class WorkoutPage {
       },
       () => {
         this.editing.set(null);
+        this.toast.show('Set updated');
         this.reload();
       },
-      () => this.editing.set(null),
+      () => {
+        this.editing.set(null);
+        this.toast.show('Set updated. It will sync when you are back online.');
+      },
     );
   }
 
@@ -315,6 +323,7 @@ export class WorkoutPage {
     if (queued) {
       this.queue.removePending(queued);
       this.editing.set(null);
+      this.toast.show('Set deleted');
       return;
     }
     this.runOrQueue(
@@ -322,9 +331,13 @@ export class WorkoutPage {
       { type: 'deleteSet', workoutId: w.id, workoutExerciseId: ex.id, setId: e.set.id },
       () => {
         this.editing.set(null);
+        this.toast.show('Set deleted');
         this.reload();
       },
-      () => this.editing.set(null),
+      () => {
+        this.editing.set(null);
+        this.toast.show('Set deleted. It will sync when you are back online.');
+      },
     );
   }
 
@@ -340,7 +353,11 @@ export class WorkoutPage {
       confirmLabel: 'Remove exercise',
       danger: true,
     });
-    if (ok) this.run(this.api.removeExercise(w.id, ex.id), (updated) => this.server.set(updated));
+    if (!ok) return;
+    this.run(this.api.removeExercise(w.id, ex.id), (updated) => {
+      this.server.set(updated);
+      this.toast.show(`${ex.name} removed`);
+    });
   }
 
   /** Opens the finish sheet, or offers to discard when nothing was logged. */
@@ -354,6 +371,7 @@ export class WorkoutPage {
   }
 
   protected startSaveRoutine(): void {
+    this.routineError.set(false);
     this.routineName.set(this.workout()?.name ?? '');
   }
 
@@ -361,7 +379,12 @@ export class WorkoutPage {
   protected saveRoutine(): void {
     const w = this.workout();
     const name = this.routineName()?.trim();
-    if (!w || !name || this.busy()) return;
+    if (!w || this.busy()) return;
+    if (!name) {
+      this.routineError.set(true);
+      document.getElementById('routine-name')?.focus();
+      return;
+    }
     this.busy.set(true);
     this.error.set(null);
     this.routines
@@ -371,6 +394,7 @@ export class WorkoutPage {
           this.busy.set(false);
           this.routineName.set(null);
           this.routineSaved.set(r.name);
+          this.toast.show(`Routine "${r.name}" saved`);
         },
         error: (err: unknown) => {
           this.busy.set(false);
@@ -395,6 +419,7 @@ export class WorkoutPage {
     save.pipe(switchMap(() => this.api.finish(w.id))).subscribe({
       next: () => {
         this.busy.set(false);
+        this.toast.show('Workout finished');
         leave();
       },
       error: (err: unknown) => {
@@ -403,6 +428,7 @@ export class WorkoutPage {
           // No connection: keep the notes and the finish on this phone, in order, and send them later.
           if (changed) this.queue.add({ type: 'notes', workoutId: w.id, notes });
           this.queue.add({ type: 'finish', workoutId: w.id });
+          this.toast.show('Workout saved on this phone. It will sync when you are back online.');
           leave();
         } else {
           this.error.set(problemMessage(err));
@@ -425,6 +451,7 @@ export class WorkoutPage {
     });
     if (!ok) return;
     this.run(this.api.discard(w.id), () => {
+      this.toast.show('Workout discarded');
       this.rest.skip();
       this.router.navigate(['/']);
     });
