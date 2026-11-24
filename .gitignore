@@ -1,3 +1,6 @@
+# Dependencies, wherever they are installed
+node_modules/
+
 # OS / editors
 .DS_Store
 Thumbs.db

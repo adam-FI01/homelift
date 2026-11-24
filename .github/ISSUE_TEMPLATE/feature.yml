@@ -1,0 +1,21 @@
+name: Feature or improvement
+description: An idea that would make HomeLift better
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would it help with
+      description: The situation or problem, in a sentence or two.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What it could look like. Plain arithmetic over your own data, no AI.
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: How we'll know it works.
