@@ -10,11 +10,12 @@ import { formatDuration } from '../workout/workout';
 import { DEFAULT_PLAN, RoutineExercise, supersetGroups, withLinks } from './routine';
 import { RoutineService } from './routine.service';
 
-type Field = 'sets' | 'reps' | 'restSeconds';
+type Field = 'sets' | 'reps' | 'maxReps' | 'restSeconds';
 
 const LIMITS: Record<Field, { min: number; max: number; step: number }> = {
   sets: { min: 1, max: 20, step: 1 },
   reps: { min: 1, max: 100, step: 1 },
+  maxReps: { min: 1, max: 100, step: 1 },
   restSeconds: { min: 0, max: 900, step: 15 },
 };
 
@@ -93,15 +94,33 @@ export class RoutineEditor implements OnInit {
   }
 
   protected adjust(index: number, field: Field, direction: -1 | 1): void {
+    const e = this.exercises()[index];
+    if (field === 'maxReps') {
+      // "Up to": the top of a rep range. One step above the bottom is the lowest it can go, and
+      // going lower turns the range off again.
+      const next = (e.maxReps ?? e.reps) + direction;
+      this.patch(index, { maxReps: next <= e.reps ? null : Math.min(LIMITS.maxReps.max, next) });
+      return;
+    }
     const { min, max, step } = LIMITS[field];
-    this.patch(index, {
-      [field]: Math.min(max, Math.max(min, this.exercises()[index][field] + step * direction)),
-    });
+    const value = Math.min(max, Math.max(min, e[field] + step * direction));
+    // Moving the bottom up past the top of the range pushes the top up with it.
+    const top = field === 'reps' && e.maxReps != null && e.maxReps <= value ? null : e.maxReps;
+    this.patch(index, { [field]: value, ...(field === 'reps' ? { maxReps: top } : {}) });
   }
 
   protected atLimit(index: number, field: Field, direction: -1 | 1): boolean {
-    const value = this.exercises()[index][field];
+    const e = this.exercises()[index];
+    if (field === 'maxReps') {
+      return direction < 0 ? e.maxReps == null : (e.maxReps ?? e.reps) >= LIMITS.maxReps.max;
+    }
+    const value = e[field];
     return direction < 0 ? value <= LIMITS[field].min : value >= LIMITS[field].max;
+  }
+
+  /** "8", or "8 to 12" for a rep range. */
+  protected repsLabel(e: RoutineExercise): string {
+    return e.maxReps ? `${e.reps} to ${e.maxReps}` : String(e.reps);
   }
 
   protected toggleLink(index: number): void {
@@ -140,10 +159,11 @@ export class RoutineEditor implements OnInit {
     const groups = supersetGroups(list);
     const input = {
       name: this.name().trim(),
-      exercises: list.map(({ exerciseId, sets, reps, restSeconds, autoProgress }, i) => ({
+      exercises: list.map(({ exerciseId, sets, reps, maxReps, restSeconds, autoProgress }, i) => ({
         exerciseId,
         sets,
         reps,
+        maxReps: maxReps ?? null,
         restSeconds,
         autoProgress,
         supersetGroup: groups[i],

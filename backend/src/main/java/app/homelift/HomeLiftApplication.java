@@ -2,7 +2,9 @@ package app.homelift;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ImportRuntimeHints;
 
+@ImportRuntimeHints(NativeHints.class)
 @SpringBootApplication
 public class HomeLiftApplication {
 

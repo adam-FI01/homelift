@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import app.homelift.exercise.ExerciseMediaService;
 import app.homelift.workout.SetRecord;
 import app.homelift.workout.TrainingLog;
 
@@ -48,8 +51,11 @@ class BackupController {
 
 	private final String version;
 
+	private final ExerciseMediaService media;
+
 	BackupController(TrainingLog log, JdbcTemplate jdbc, Clock clock, @Value("${homelift.data-dir}") Path dataDir,
-			ObjectProvider<BuildProperties> build) {
+			ExerciseMediaService media, ObjectProvider<BuildProperties> build) {
+		this.media = media;
 		this.log = log;
 		this.jdbc = jdbc;
 		this.clock = clock;
@@ -95,9 +101,7 @@ class BackupController {
 	 */
 	@GetMapping("/homelift.db")
 	ResponseEntity<StreamingResponseBody> database() throws IOException {
-		Path copy = Files.createTempFile(this.dataDir, "backup-", ".db");
-		Files.delete(copy); // VACUUM INTO refuses to overwrite an existing file
-		this.jdbc.execute("VACUUM INTO '" + copy.toAbsolutePath().toString().replace("'", "''") + "'");
+		Path copy = snapshot();
 		long size = Files.size(copy);
 		StreamingResponseBody body = (out) -> {
 			try (InputStream in = Files.newInputStream(copy)) {
@@ -109,6 +113,48 @@ class BackupController {
 		};
 		return download("homelift-" + today() + ".db", MediaType.APPLICATION_OCTET_STREAM).contentLength(size)
 			.body(body);
+	}
+
+	/**
+	 * Everything in one file: a consistent copy of the database as {@code homelift.db} and every
+	 * exercise picture and clip under {@code media/}. Restore by stopping HomeLift and unzipping
+	 * into the data folder.
+	 */
+	@GetMapping("/homelift.zip")
+	ResponseEntity<StreamingResponseBody> everything() throws IOException {
+		Path copy = snapshot();
+		StreamingResponseBody body = (out) -> {
+			try (ZipOutputStream zip = new ZipOutputStream(out)) {
+				zip.putNextEntry(new ZipEntry("homelift.db"));
+				Files.copy(copy, zip);
+				zip.closeEntry();
+				Path dir = this.media.directory();
+				if (Files.isDirectory(dir)) {
+					try (var files = Files.list(dir)) {
+						for (Path file : files.filter(Files::isRegularFile)
+							.filter((f) -> !f.getFileName().toString().endsWith(".part"))
+							.sorted()
+							.toList()) {
+							zip.putNextEntry(new ZipEntry(ExerciseMediaService.DIRECTORY + "/" + file.getFileName()));
+							Files.copy(file, zip);
+							zip.closeEntry();
+						}
+					}
+				}
+			}
+			finally {
+				Files.deleteIfExists(copy);
+			}
+		};
+		return download("homelift-" + today() + ".zip", new MediaType("application", "zip")).body(body);
+	}
+
+	/** A temporary, consistent copy of the database; the caller deletes it. */
+	private Path snapshot() throws IOException {
+		Path copy = Files.createTempFile(this.dataDir, "backup-", ".db");
+		Files.delete(copy); // VACUUM INTO refuses to overwrite an existing file
+		this.jdbc.execute("VACUUM INTO '" + copy.toAbsolutePath().toString().replace("'", "''") + "'");
+		return copy;
 	}
 
 	private ResponseEntity.BodyBuilder download(String filename, MediaType type) {

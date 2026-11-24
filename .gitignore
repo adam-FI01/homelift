@@ -38,3 +38,6 @@ logs/
 
 # Private local notes (runbook etc.)
 *.local.md
+
+# The UI is copied here for local jar and native builds (see Dockerfile)
+backend/src/main/resources/static/

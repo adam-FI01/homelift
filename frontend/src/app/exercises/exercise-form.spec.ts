@@ -42,10 +42,72 @@ describe('ExerciseForm', () => {
       equipment: 'CABLE',
       restSeconds: null,
       notes: null,
+      stepKg: null,
     });
     req.flush({ id: 9, ...req.request.body, archived: false });
     expect(navigate).toHaveBeenCalledWith(['/exercises']);
     http.verify();
+  });
+
+  it('sends a clip after saving a new exercise', async () => {
+    const { fixture, http, el, button, navigate } = setup();
+    const name = el.querySelector('input')!;
+    name.value = 'Cable Row';
+    name.dispatchEvent(new Event('input'));
+    button('Back').click();
+    button('Cable').click();
+
+    const clip = new File([new Uint8Array(32)], 'row.mp4', { type: 'video/mp4' });
+    const picker = el.querySelector('input[type=file]') as HTMLInputElement;
+    Object.defineProperty(picker, 'files', { value: [clip] });
+    picker.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(el.querySelector('video')).not.toBeNull());
+
+    button('Save').click();
+    const created = http.expectOne({ method: 'POST', url: '/api/exercises' });
+    created.flush({ id: 9, ...created.request.body, archived: false });
+    const upload = http.expectOne({ method: 'PUT', url: '/api/exercises/9/media' });
+    expect(upload.request.headers.get('Content-Type')).toBe('video/mp4');
+    upload.flush({ id: 9, name: 'Cable Row', mediaUrl: '/api/exercises/9/media/9-x.mp4' });
+    await fixture.whenStable();
+    expect(navigate).toHaveBeenCalledWith(['/exercises']);
+  });
+
+  it('refuses a file that is not a picture or clip', async () => {
+    const { fixture, el } = setup();
+    const doc = new File(['hi'], 'notes.pdf', { type: 'application/pdf' });
+    const picker = el.querySelector('input[type=file]') as HTMLInputElement;
+    Object.defineProperty(picker, 'files', { value: [doc] });
+    picker.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(el.querySelector('[role=alert]')).not.toBeNull());
+    expect(el.textContent).toContain('JPEG, PNG or WebP');
+    expect(fixture).toBeTruthy();
+  });
+
+  it('removes the saved picture when asked', async () => {
+    const { fixture, http, el, button, navigate } = setup(1);
+    http.expectOne('/api/exercises/1').flush({
+      id: 1,
+      name: 'Dip',
+      muscleGroup: 'ARMS',
+      equipment: 'BODYWEIGHT',
+      mediaUrl: '/api/exercises/1/media/1-a.png',
+      mediaType: 'IMAGE',
+      archived: false,
+    });
+    await fixture.whenStable();
+    expect(el.querySelector('img')).not.toBeNull();
+
+    button('Remove').click();
+    await fixture.whenStable();
+    expect(el.querySelector('img')).toBeNull();
+    button('Save').click();
+    http
+      .expectOne({ method: 'PUT', url: '/api/exercises/1' })
+      .flush({ id: 1, name: 'Dip', mediaUrl: '/api/exercises/1/media/1-a.png' });
+    http.expectOne({ method: 'DELETE', url: '/api/exercises/1/media' }).flush({ id: 1 });
+    await fixture.whenStable();
+    expect(navigate).toHaveBeenCalledWith(['/exercises']);
   });
 
   it('shows the server message when the name is taken', async () => {

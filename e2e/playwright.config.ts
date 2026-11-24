@@ -19,6 +19,8 @@ export default defineConfig({
     ...devices['Pixel 7'],
     baseURL: external ?? `http://localhost:${port}`,
     trace: 'off',
+    // Set CHROMIUM_PATH to use a browser you already have instead of the one Playwright downloads.
+    launchOptions: { executablePath: process.env['CHROMIUM_PATH'] },
   },
   webServer: external
     ? undefined

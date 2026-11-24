@@ -85,6 +85,23 @@ class ExerciseApiTests {
 	}
 
 	@Test
+	void anExerciseCanHaveItsOwnWeightStep() {
+		long id = idOf("Dumbbell Curl");
+		assertThat(this.mvc.put()
+			.uri("/api/exercises/{id}", id)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"name\":\"Dumbbell Curl\",\"muscleGroup\":\"ARMS\",\"equipment\":\"DUMBBELL\",\"stepKg\":1}"))
+			.hasStatusOk()
+			.bodyJson()
+			.hasPathSatisfying("$.stepKg", (v) -> assertThat(v).isEqualTo(1.0));
+		assertThat(this.mvc.put()
+			.uri("/api/exercises/{id}", id)
+			.contentType(MediaType.APPLICATION_JSON)
+			.content("{\"name\":\"Dumbbell Curl\",\"muscleGroup\":\"ARMS\",\"equipment\":\"DUMBBELL\",\"stepKg\":0}"))
+			.hasStatus(400);
+	}
+
+	@Test
 	void anExerciseCanHaveItsOwnRest() {
 		long id = idOf("Deadlift");
 		assertThat(this.mvc.put()

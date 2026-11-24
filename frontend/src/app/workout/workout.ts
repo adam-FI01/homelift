@@ -9,6 +9,8 @@ export interface LoggedSet {
   warmup: boolean;
   /** Logged while offline and not yet on the server. */
   pending?: boolean;
+  /** Key of the queued action, for a set that is still only on this device. */
+  queueKey?: string;
 }
 
 export interface PreviousSet {
@@ -24,8 +26,14 @@ export interface WorkoutExercise {
   muscleGroup: MuscleGroup;
   equipment: Equipment;
   targetSets: number;
-  /** Planned reps per set when started from a routine. */
+  /** Planned reps per set when started from a routine (the bottom of a range). */
   targetReps: number | null;
+  /** Top of the planned rep range, or null for a fixed number of reps. */
+  targetMaxReps?: number | null;
+  /** Weight to add for this exercise, in kg, or null to follow the setting. */
+  stepKg?: number | null;
+  /** How many of the last two sessions in a row fell short of the plan (0 to 2). */
+  missedSessions?: number;
   /** Rest after each set, in seconds, when started from a routine. */
   restSeconds: number | null;
   /** Add weight when every set last time reached the planned reps. */
@@ -50,6 +58,11 @@ export interface Workout {
 
 export const WEIGHT_STEP_KG = 2.5;
 
+/** The weight to add for this exercise: its own step, else the one from Settings. */
+export function stepFor(exercise: WorkoutExercise, defaultStepKg = WEIGHT_STEP_KG): number {
+  return exercise.stepKg ?? defaultStepKg;
+}
+
 /**
  * Values to fill in for the next set: repeat what was just logged today, otherwise the same
  * set from last time (plus a step when auto progression earned it), otherwise a sensible
@@ -61,13 +74,23 @@ export function nextSetDefaults(exercise: WorkoutExercise, stepKg = WEIGHT_STEP_
   const target = exercise.targetReps;
   const previous = exercise.lastTime[0];
   if (previous) {
-    if (earnedProgression(exercise)) return { weightKg: previous.weightKg + stepKg, reps: target! };
+    if (earnedProgression(exercise)) {
+      return { weightKg: previous.weightKg + stepFor(exercise, stepKg), reps: target! };
+    }
     return { weightKg: previous.weightKg, reps: target ?? previous.reps };
   }
   return { weightKg: startingWeight(exercise.equipment), reps: target ?? 8 };
 }
 
-/** True when auto progression is on and every planned set last time reached the planned reps. */
+/** True when the plan is a range such as 8 to 12 reps. */
+export function hasRange(exercise: WorkoutExercise): boolean {
+  return exercise.targetReps != null && (exercise.targetMaxReps ?? 0) > exercise.targetReps;
+}
+
+/**
+ * True when auto progression is on and every planned set last time reached the reps to beat: the
+ * planned reps, or the top of the range when there is one.
+ */
 export function earnedProgression(exercise: WorkoutExercise): boolean {
   const target = exercise.targetReps;
   const last = exercise.lastTime;
@@ -75,7 +98,7 @@ export function earnedProgression(exercise: WorkoutExercise): boolean {
     exercise.autoProgress &&
     target !== null &&
     last.length >= exercise.targetSets &&
-    last.slice(0, exercise.targetSets).every((s) => s.reps >= target)
+    last.slice(0, exercise.targetSets).every((s) => s.reps >= (exercise.targetMaxReps ?? target))
   );
 }
 
@@ -141,27 +164,66 @@ export interface ProgressionHint {
   reps: number;
   /** Why, in a few words. */
   reason: string;
+  /** A lighter week: the weight is dropped on purpose. */
+  deload?: boolean;
+}
+
+/** Share of the weight to keep in a lighter week. */
+export const DELOAD_FACTOR = 0.9;
+
+/** `kg` rounded to the nearest multiple of `step`, so a lighter week lands on weights you own. */
+export function roundToStep(kg: number, step: number): number {
+  return step > 0 ? Math.round(kg / step) * step : kg;
 }
 
 /**
- * A suggestion for the first working set, based on last time: add weight once every set hit its
- * reps, otherwise match last time or beat it by a rep. Plain arithmetic, nothing clever. Not shown
- * once you've logged a set, or when auto progression already added the weight.
+ * A suggestion for the first working set, based on last time. Plain arithmetic, nothing clever:
+ *
+ * 1. Two sessions in a row missed the plan: a lighter week, 10% off the last weight.
+ * 2. A rep range (8 to 12): add a rep each time until every set reaches the top, then add one step
+ *    of weight and drop back to the bottom.
+ * 3. A fixed target: add a step once every set hit it, otherwise match last time.
+ * 4. No plan: beat last time by a rep, or add weight after 12 reps on every set.
+ *
+ * Not shown once you've logged a set, or when auto progression already added the weight.
  */
 export function progressionHint(
   exercise: WorkoutExercise,
-  stepKg = WEIGHT_STEP_KG,
+  defaultStepKg = WEIGHT_STEP_KG,
 ): ProgressionHint | null {
   const last = exercise.lastTime;
   if (last.length === 0 || workingSets(exercise).length > 0) return null;
+  const step = stepFor(exercise, defaultStepKg);
   const top = last[0];
   const target = exercise.targetReps;
+
+  if ((exercise.missedSessions ?? 0) >= 2 && top.weightKg > 0) {
+    return {
+      weightKg: Math.max(roundToStep(top.weightKg * DELOAD_FACTOR, step), 0),
+      reps: target ?? top.reps,
+      reason: 'Missed the plan two sessions in a row. Try a lighter week',
+      deload: true,
+    };
+  }
   if (target !== null) {
     if (earnedProgression(exercise)) return null; // already applied, and said so in the summary
-    const allHit = last.slice(0, exercise.targetSets).every((s) => s.reps >= target);
-    return allHit
+    const planned = last.slice(0, exercise.targetSets);
+    if (hasRange(exercise)) {
+      const max = exercise.targetMaxReps!;
+      if (planned.length > 0 && planned.every((s) => s.reps >= max)) {
+        return {
+          weightKg: top.weightKg + step,
+          reps: target,
+          reason: `Every set hit ${max} reps last time`,
+        };
+      }
+      const lowest = Math.min(...planned.map((s) => s.reps), max);
+      const reps = Math.min(Math.max(lowest + 1, target), max);
+      return { weightKg: top.weightKg, reps, reason: `Add a rep, working up to ${max}` };
+    }
+    return planned.every((s) => s.reps >= target)
       ? {
-          weightKg: top.weightKg + stepKg,
+          weightKg: top.weightKg + step,
           reps: target,
           reason: `Every set hit ${target} reps last time`,
         }
@@ -169,7 +231,7 @@ export function progressionHint(
   }
   if (last.every((s) => s.reps >= 12) && top.weightKg > 0) {
     return {
-      weightKg: top.weightKg + stepKg,
+      weightKg: top.weightKg + step,
       reps: Math.max(top.reps - 2, 1),
       reason: '12+ reps on every set last time',
     };

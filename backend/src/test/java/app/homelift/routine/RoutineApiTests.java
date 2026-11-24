@@ -98,6 +98,56 @@ class RoutineApiTests {
 		assertThat(this.mvc.get().uri("/api/workouts/{id}", workoutId)).hasStatusOk();
 	}
 
+	@Test
+	void keepsARepRangeAndRejectsABackwardsOne() throws Exception {
+		String range = ex("Dumbbell Curl", 3, 8, 90, false).replace("}", ",\"maxReps\":12}");
+		long id = id(save(null, "Arms", range));
+		String body = this.mvc.get().uri("/api/routines/{id}", id).exchange().getResponse().getContentAsString();
+		assertThat(JsonPath.<Integer>read(body, "$.exercises[0].reps")).isEqualTo(8);
+		assertThat(JsonPath.<Integer>read(body, "$.exercises[0].maxReps")).isEqualTo(12);
+
+		// A workout started from the routine carries the whole range.
+		MvcTestResult started = this.mvc.post().uri("/api/routines/{id}/start", id).exchange();
+		String workout = started.getResponse().getContentAsString();
+		assertThat(JsonPath.<Integer>read(workout, "$.exercises[0].targetReps")).isEqualTo(8);
+		assertThat(JsonPath.<Integer>read(workout, "$.exercises[0].targetMaxReps")).isEqualTo(12);
+
+		String backwards = ex("Hammer Curl", 3, 10, 90, false).replace("}", ",\"maxReps\":6}");
+		assertThat(save(null, "Backwards", backwards)).hasStatus(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	void countsSessionsInARowThatMissedThePlan() throws Exception {
+		long routine = id(save(null, "Press", ex("Overhead Press", 2, 5, 90, false)));
+		assertThat(missedNextTime(routine, 5, 5)).isZero(); // nothing before it
+		assertThat(missedNextTime(routine, 5, 4)).isZero(); // met the plan before this one
+		assertThat(missedNextTime(routine, 5, 3)).isEqualTo(1); // missed once
+		assertThat(missedNextTime(routine, 4, 4)).isEqualTo(2); // missed twice in a row
+		assertThat(missedNextTime(routine, 5, 5)).isEqualTo(2); // still the two before it
+		assertThat(missedNextTime(routine, 5, 5)).isZero(); // a good session ends the streak
+	}
+
+	/**
+	 * Starts the routine and returns how many earlier sessions in a row missed the plan, then
+	 * logs these two sets and finishes, so the next call sees this session as the latest.
+	 */
+	private int missedNextTime(long routine, int firstSetReps, int secondSetReps) throws Exception {
+		String started = this.mvc.post().uri("/api/routines/{id}/start", routine).exchange().getResponse()
+			.getContentAsString();
+		long workout = JsonPath.<Integer>read(started, "$.id");
+		long exercise = JsonPath.<Integer>read(started, "$.exercises[0].id");
+		int missed = JsonPath.<Integer>read(started, "$.exercises[0].missedSessions");
+		for (int reps : new int[] { firstSetReps, secondSetReps }) {
+			this.mvc.post()
+				.uri("/api/workouts/{w}/exercises/{e}/sets", workout, exercise)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"weightKg\":40,\"reps\":%d}".formatted(reps))
+				.exchange();
+		}
+		this.mvc.post().uri("/api/workouts/{id}/finish", workout).exchange();
+		return missed;
+	}
+
 	private String ex(String name, int sets, int reps, int rest, boolean auto) {
 		long exerciseId = this.exercises.list(name, null, false).stream().filter((e) -> e.getName().equals(name))
 			.findFirst().orElseThrow().getId();

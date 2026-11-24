@@ -36,12 +36,7 @@
       <button type="button" class="finish" [disabled]="busy()" (click)="finish()">Finish</button>
     </header>
 
-    @if (waiting() > 0) {
-      <p class="offline" role="status">
-        Offline · {{ waiting() }} {{ waiting() === 1 ? 'set' : 'sets' }} saved on this phone,
-        sending when you're back online
-      </p>
-    }
+    <app-offline-status />
 
     <div
       class="progress"
@@ -286,6 +281,35 @@
           (input)="notesDraft.set($any($event.target).value)"
         ></textarea>
       </label>
+      @if (routineSaved(); as saved) {
+        <p class="sub saved" role="status">Saved as routine "{{ saved }}".</p>
+      } @else if (workout()?.routineId == null) {
+        @if (routineName() === null) {
+          <button type="button" class="secondary" (click)="startSaveRoutine()">
+            Save as routine
+          </button>
+        } @else {
+          <label class="notes">
+            <span>Routine name</span>
+            <input
+              class="field"
+              maxlength="60"
+              autocomplete="off"
+              placeholder="e.g. Push A"
+              [value]="routineName()"
+              (input)="routineName.set($any($event.target).value)"
+            />
+          </label>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="busy() || !routineName()?.trim()"
+            (click)="saveRoutine()"
+          >
+            Save routine
+          </button>
+        }
+      }
       <button type="button" class="btn-primary" [disabled]="busy()" (click)="confirmFinish()">
         Finish workout
       </button>
