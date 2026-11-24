@@ -70,6 +70,7 @@ describe('RoutineEditor', () => {
           exerciseId: 13,
           sets: 3,
           reps: 8,
+          maxReps: null,
           restSeconds: 120,
           autoProgress: false,
           supersetGroup: null,
@@ -78,6 +79,7 @@ describe('RoutineEditor', () => {
           exerciseId: 1,
           sets: 6,
           reps: 5,
+          maxReps: null,
           restSeconds: 135,
           autoProgress: true,
           supersetGroup: null,
@@ -86,6 +88,23 @@ describe('RoutineEditor', () => {
     });
     req.flush(ROUTINE);
     expect(navigate).toHaveBeenCalledWith(['/routines']);
+  });
+
+  it('makes a rep range and keeps the top above the bottom', async () => {
+    const { fixture, http, el, byLabel } = await setup(4);
+    byLabel('More up to').click();
+    byLabel('More up to').click();
+    await fixture.whenStable();
+    expect(el.textContent).toContain('5 × 5 to 7');
+
+    // Raising the bottom past the top clears the range rather than leaving it backwards.
+    for (let i = 0; i < 3; i++) byLabel('More reps').click();
+    await fixture.whenStable();
+    expect(el.textContent).not.toContain('to 7');
+
+    [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Save')!.click();
+    const body = http.expectOne({ method: 'PUT', url: '/api/routines/4' }).request.body;
+    expect(body.exercises[0].maxReps).toBeNull();
   });
 
   it('builds a new routine from the picker', async () => {
@@ -129,6 +148,7 @@ describe('RoutineEditor', () => {
         exerciseId: 17,
         sets: 3,
         reps: 8,
+        maxReps: null,
         restSeconds: 120,
         autoProgress: false,
         supersetGroup: null,
@@ -137,6 +157,7 @@ describe('RoutineEditor', () => {
         exerciseId: 22,
         sets: 3,
         reps: 8,
+        maxReps: null,
         restSeconds: 120,
         autoProgress: false,
         supersetGroup: null,

@@ -39,6 +39,10 @@ public class RoutineExercise {
 	@Column(nullable = false)
 	private int reps;
 
+	/** Top of a rep range such as 8 to 12 (reps is the bottom), or null for a fixed number. */
+	@Column(name = "max_reps")
+	private @Nullable Integer maxReps;
+
 	@Column(name = "rest_seconds", nullable = false)
 	private int restSeconds;
 
@@ -51,11 +55,12 @@ public class RoutineExercise {
 	protected RoutineExercise() {
 	}
 
-	RoutineExercise(Exercise exercise, int sets, int reps, int restSeconds, boolean autoProgress,
-			@Nullable Integer supersetGroup) {
+	RoutineExercise(Exercise exercise, int sets, int reps, @Nullable Integer maxReps, int restSeconds,
+			boolean autoProgress, @Nullable Integer supersetGroup) {
 		this.exercise = exercise;
 		this.sets = sets;
 		this.reps = reps;
+		this.maxReps = (maxReps != null && maxReps > reps) ? maxReps : null;
 		this.restSeconds = restSeconds;
 		this.autoProgress = autoProgress;
 		this.supersetGroup = supersetGroup;
@@ -84,6 +89,10 @@ public class RoutineExercise {
 
 	public int getReps() {
 		return this.reps;
+	}
+
+	public @Nullable Integer getMaxReps() {
+		return this.maxReps;
 	}
 
 	public int getRestSeconds() {

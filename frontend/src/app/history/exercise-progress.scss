@@ -162,3 +162,17 @@
   margin: 0;
   color: var(--sub);
 }
+
+.demo {
+  margin: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--soft);
+}
+.demo img,
+.demo video {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+}

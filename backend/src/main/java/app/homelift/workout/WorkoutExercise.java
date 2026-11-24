@@ -48,6 +48,9 @@ public class WorkoutExercise {
 	@Column(name = "target_reps")
 	private @Nullable Integer targetReps;
 
+	@Column(name = "target_max_reps")
+	private @Nullable Integer targetMaxReps;
+
 	@Column(name = "rest_seconds")
 	private @Nullable Integer restSeconds;
 
@@ -95,6 +98,11 @@ public class WorkoutExercise {
 		return this.targetReps;
 	}
 
+	/** Top of the planned rep range, or null when the plan is a fixed number of reps. */
+	public @Nullable Integer getTargetMaxReps() {
+		return this.targetMaxReps;
+	}
+
 	public @Nullable Integer getRestSeconds() {
 		return this.restSeconds;
 	}
@@ -121,8 +129,9 @@ public class WorkoutExercise {
 		this.restSeconds = restSeconds;
 	}
 
-	void plan(int targetReps, int restSeconds, boolean autoProgress) {
+	void plan(int targetReps, @Nullable Integer targetMaxReps, int restSeconds, boolean autoProgress) {
 		this.targetReps = targetReps;
+		this.targetMaxReps = targetMaxReps;
 		this.restSeconds = restSeconds;
 		this.autoProgress = autoProgress;
 	}

@@ -182,7 +182,7 @@ describe('WorkoutPage', () => {
   });
 
   it('keeps logging while offline and shows the set as pending', async () => {
-    localStorage.removeItem('homelift.offline.sets');
+    localStorage.removeItem('homelift.offline.queue');
     const { fixture, el, button, http } = await setup(WORKOUT);
     button('Log set 2').click();
     http
@@ -195,6 +195,45 @@ describe('WorkoutPage', () => {
     button('Bench Press').click();
     await fixture.whenStable();
     expect(el.querySelector('[aria-label="Set 2 waiting to sync"]')).not.toBeNull();
-    localStorage.removeItem('homelift.offline.sets');
+    localStorage.removeItem('homelift.offline.queue');
+  });
+
+  it('finishes offline: keeps the finish on the phone and goes home', async () => {
+    localStorage.removeItem('homelift.offline.queue');
+    const { fixture, el, button, http } = await setup(WORKOUT);
+    button('Finish').click();
+    await fixture.whenStable();
+    button('Finish workout').click();
+    http
+      .expectOne({ method: 'POST', url: '/api/workouts/7/finish' })
+      .error(new ProgressEvent('error'));
+    await fixture.whenStable();
+    const queued = JSON.parse(localStorage.getItem('homelift.offline.queue')!);
+    expect(queued.map((q: { type: string }) => q.type)).toEqual(['finish']);
+    expect(el).toBeTruthy();
+    localStorage.removeItem('homelift.offline.queue');
+  });
+
+  it('saves the workout as a routine from the finish sheet', async () => {
+    const { fixture, el, button, http } = await setup(WORKOUT);
+    button('Finish').click();
+    await fixture.whenStable();
+    button('Save as routine').click();
+    await fixture.whenStable();
+    const input = el.querySelector('input[placeholder="e.g. Push A"]') as HTMLInputElement;
+    expect(input.value).toBe('Push A');
+    input.value = 'Push Day';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    button('Save routine').click();
+
+    const req = http.expectOne({ method: 'POST', url: '/api/routines' });
+    expect(req.request.body.name).toBe('Push Day');
+    expect(req.request.body.exercises).toEqual([
+      expect.objectContaining({ exerciseId: 1, sets: 1, reps: 5 }),
+    ]);
+    req.flush({ id: 3, name: 'Push Day', exercises: [], totalSets: 1, estimatedMinutes: 5 });
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Saved as routine "Push Day"');
   });
 });

@@ -24,6 +24,17 @@ export class ExerciseService {
     return this.http.put<Exercise>(`${BASE}/${id}`, input);
   }
 
+  /** Sends a picture or clip; the body is the file and its type says what it is. */
+  uploadMedia(id: number, file: Blob) {
+    return this.http.put<Exercise>(`${BASE}/${id}/media`, file, {
+      headers: { 'Content-Type': file.type },
+    });
+  }
+
+  removeMedia(id: number) {
+    return this.http.delete<Exercise>(`${BASE}/${id}/media`);
+  }
+
   archive(id: number) {
     return this.http.post<Exercise>(`${BASE}/${id}/archive`, null);
   }

@@ -22,6 +22,8 @@
 </header>
 
 @if (data(); as d) {
+  <app-offline-status />
+
   @if (offline()) {
     <p class="card sub" role="alert">Server unreachable. Check that HomeLift is running.</p>
   }
@@ -43,7 +45,7 @@
   }
 
   <section class="card next" aria-label="Up next">
-    @if (d.current; as c) {
+    @if (current(); as c) {
       <div class="next-head">
         <div class="what">
           <span class="sub">In progress</span>

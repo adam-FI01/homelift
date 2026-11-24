@@ -1,6 +1,16 @@
-import { Component, computed, inject, input, numberAttribute, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  input,
+  numberAttribute,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
+import { ACCEPT, PreparedMedia, prepareMedia } from '../shared/media';
 import { SettingsService } from '../settings/settings.service';
 import { formatDuration } from '../workout/workout';
 import { EQUIPMENT, Equipment, Exercise, MUSCLE_GROUPS, MuscleGroup, label } from './exercise';
@@ -104,6 +114,67 @@ import { ExerciseService, problemMessage } from './exercise.service';
           </div>
         </fieldset>
 
+        <fieldset>
+          <legend>Photo or short clip</legend>
+          @if (preview(); as p) {
+            <div class="media">
+              @if (p.type === 'VIDEO') {
+                <video [src]="p.url" controls muted loop playsinline preload="metadata"></video>
+              } @else {
+                <img [src]="p.url" alt="This exercise" decoding="async" />
+              }
+            </div>
+          }
+          <div class="rest">
+            <label class="chip file">
+              {{ preview() ? 'Choose another' : 'Add a picture or clip' }}
+              <input
+                type="file"
+                class="visually-hidden"
+                [accept]="accept"
+                (change)="chooseMedia($event)"
+              />
+            </label>
+            @if (preview()) {
+              <button type="button" class="chip" (click)="clearMedia()">Remove</button>
+            }
+          </div>
+          @if (mediaError(); as message) {
+            <p class="error" role="alert">{{ message }}</p>
+          }
+          <p class="hint">
+            Your own photo or a clip of up to 15 MB. It stays on your server and goes into backups.
+          </p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Weight step</legend>
+          <div class="rest">
+            <button
+              type="button"
+              class="chip"
+              [class.on]="step() === null"
+              [attr.aria-pressed]="step() === null"
+              (click)="step.set(null)"
+            >
+              Default ({{ defaultStep() }} {{ unit() }})
+            </button>
+            <div class="rest-pick" [class.on]="step() !== null">
+              <button type="button" aria-label="Smaller weight step" (click)="nudgeStep(-1)">
+                −
+              </button>
+              <output>{{ step() ?? defaultStep() }} {{ unit() }}</output>
+              <button type="button" aria-label="Bigger weight step" (click)="nudgeStep(1)">
+                +
+              </button>
+            </div>
+          </div>
+          <p class="hint">
+            What to add when you progress, for example 1 for small dumbbells or the jump between
+            plates on a machine.
+          </p>
+        </fieldset>
+
         @if (error(); as message) {
           <p class="error" role="alert">{{ message }}</p>
         }
@@ -122,6 +193,38 @@ import { ExerciseService, problemMessage } from './exercise.service';
     }
   `,
   styles: `
+    .media {
+      margin-bottom: 12px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--soft);
+    }
+    .media img,
+    .media video {
+      display: block;
+      width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+    }
+    .file {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .file:focus-within {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      border: 0;
+    }
     .rest {
       display: flex;
       align-items: center;
@@ -274,12 +377,34 @@ export class ExerciseForm implements OnInit {
   /** This exercise's own rest in seconds, or null to follow the default. */
   protected readonly rest = signal<number | null>(null);
   protected readonly notes = signal('');
+  /** This exercise's own weight step in the chosen unit, or null to follow Settings. */
+  protected readonly step = signal<number | null>(null);
+
+  protected readonly accept = ACCEPT;
+  /** The saved picture or clip, shown until it is removed or replaced. */
+  private readonly saved = signal<Pick<Exercise, 'mediaUrl' | 'mediaType'> | null>(null);
+  /** A file chosen but not sent yet; it goes up when the form is saved. */
+  private readonly chosen = signal<{ media: PreparedMedia; url: string } | null>(null);
+  private readonly removeSaved = signal(false);
+  protected readonly mediaError = signal<string | null>(null);
+  protected readonly preview = computed(() => {
+    const c = this.chosen();
+    if (c) return { url: c.url, type: c.media.type };
+    const s = this.saved();
+    return s?.mediaUrl && !this.removeSaved() ? { url: s.mediaUrl, type: s.mediaType } : null;
+  });
+  protected readonly unit = this.settings.unitLabel;
+  protected readonly defaultStep = this.settings.weightStep;
   protected readonly defaultRest = computed(() => this.settings.settings().defaultRestSeconds);
   protected readonly format = formatDuration;
   protected readonly archived = signal(false);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly loadFailed = signal(false);
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.dropChosen());
+  }
 
   ngOnInit(): void {
     const id = this.id();
@@ -309,11 +434,22 @@ export class ExerciseForm implements OnInit {
       equipment,
       restSeconds: this.rest(),
       notes: this.notes().trim() || null,
+      stepKg: this.step() === null ? null : this.settings.toKg(this.step()!),
     };
     const id = this.id();
-    this.run(id ? this.api.update(id, input) : this.api.create(input), () =>
-      this.router.navigate(['/exercises']),
+    const media = this.chosen()?.media;
+    const removeSaved = this.removeSaved();
+    const request = (id ? this.api.update(id, input) : this.api.create(input)).pipe(
+      // Pictures go up after the exercise exists, so a new exercise can have one straight away.
+      switchMap((saved) =>
+        media
+          ? this.api.uploadMedia(saved.id, media.blob)
+          : removeSaved && saved.mediaUrl
+            ? this.api.removeMedia(saved.id)
+            : of(saved),
+      ),
     );
+    this.run(request, () => this.router.navigate(['/exercises']));
   }
 
   protected toggleArchived(): void {
@@ -344,7 +480,48 @@ export class ExerciseForm implements OnInit {
     this.rest.update((r) => Math.min(900, Math.max(0, (r ?? this.defaultRest()) + seconds)));
   }
 
+  /** Moves the step through the usual jumps: 0.5, 1, 1.25, 2, 2.5, 5, 10. */
+  protected nudgeStep(direction: -1 | 1): void {
+    const steps = [0.25, 0.5, 1, 1.25, 2, 2.5, 5, 10];
+    const now = this.step() ?? this.defaultStep();
+    const next =
+      direction > 0 ? steps.find((s) => s > now) : [...steps].reverse().find((s) => s < now);
+    if (next !== undefined) this.step.set(next);
+  }
+
+  protected async chooseMedia(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    this.mediaError.set(null);
+    try {
+      const media = await prepareMedia(file);
+      this.dropChosen();
+      this.chosen.set({ media, url: URL.createObjectURL(media.blob) });
+    } catch (err) {
+      this.mediaError.set(err instanceof Error ? err.message : 'That file could not be used.');
+    }
+  }
+
+  protected clearMedia(): void {
+    this.dropChosen();
+    this.removeSaved.set(true);
+    this.mediaError.set(null);
+  }
+
+  private dropChosen(): void {
+    const c = this.chosen();
+    if (c) URL.revokeObjectURL(c.url);
+    this.chosen.set(null);
+  }
+
   private fill(e: Exercise): void {
+    this.saved.set({ mediaUrl: e.mediaUrl, mediaType: e.mediaType });
+    this.removeSaved.set(false);
+    this.step.set(
+      e.stepKg == null ? null : Math.round(this.settings.display(e.stepKg) * 100) / 100,
+    );
     this.name.set(e.name);
     this.muscleGroup.set(e.muscleGroup);
     this.equipment.set(e.equipment);

@@ -29,12 +29,17 @@ export interface Exercise {
   restSeconds: number | null;
   /** Set-up cues such as seat height or grip. */
   notes: string | null;
+  /** Weight to add when progressing, in kg, or null to follow the setting. */
+  stepKg?: number | null;
+  /** Address of the picture or clip, or null when there is none. */
+  mediaUrl?: string | null;
+  mediaType?: 'IMAGE' | 'VIDEO' | null;
   archived: boolean;
 }
 
 export type ExerciseInput = Pick<
   Exercise,
-  'name' | 'muscleGroup' | 'equipment' | 'restSeconds' | 'notes'
+  'name' | 'muscleGroup' | 'equipment' | 'restSeconds' | 'notes' | 'stepKg'
 >;
 
 /** Turns an API enum such as FULL_BODY into "Full body". */

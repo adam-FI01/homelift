@@ -4,6 +4,8 @@ export interface RoutineExercise {
   name: string;
   sets: number;
   reps: number;
+  /** Top of a rep range (reps is the bottom), or null for a fixed number. */
+  maxReps?: number | null;
   restSeconds: number;
   autoProgress: boolean;
   /** Exercises with the same group are a superset, done back to back. */

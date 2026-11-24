@@ -69,6 +69,7 @@ describe('SettingsPage', () => {
     const { el } = await setup();
     const links = [...el.querySelectorAll('a[download]')].map((a) => a.getAttribute('href'));
     expect(links).toEqual([
+      '/api/export/homelift.zip',
       '/api/export/homelift.db',
       '/api/export/sets.csv',
       '/api/export/backup.json',
