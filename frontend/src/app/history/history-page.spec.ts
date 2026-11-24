@@ -119,6 +119,58 @@ describe('HistoryPage', () => {
     expect(el.querySelectorAll('.month')[0].textContent).toContain('1 workout · 1,500 kg');
   });
 
+  it('saves a past workout as a routine from its detail sheet', async () => {
+    const { fixture, http, el, button } = await setup();
+    (el.querySelector('.month .row') as HTMLButtonElement).click();
+    http.expectOne('/api/workouts/3').flush({
+      id: 3,
+      name: 'Push',
+      routineId: null,
+      notes: null,
+      startedAt: WORKOUTS[0].startedAt,
+      finishedAt: WORKOUTS[0].finishedAt,
+      exercises: [
+        {
+          id: 9,
+          exerciseId: 1,
+          name: 'Bench Press',
+          muscleGroup: 'CHEST',
+          equipment: 'BARBELL',
+          targetSets: 3,
+          targetReps: null,
+          restSeconds: 90,
+          autoProgress: false,
+          supersetGroup: null,
+          notes: null,
+          lastTime: [],
+          sets: [
+            { id: 1, setNumber: 1, weightKg: 60, reps: 10, warmup: true },
+            { id: 2, setNumber: 2, weightKg: 80, reps: 5, warmup: false },
+            { id: 3, setNumber: 3, weightKg: 80, reps: 4, warmup: false },
+          ],
+        },
+      ],
+    });
+    await fixture.whenStable();
+    button('Save as routine').click();
+    await fixture.whenStable();
+    const input = el.querySelector('input[placeholder="e.g. Push A"]') as HTMLInputElement;
+    expect(input.value).toBe('Push');
+    input.value = 'Push Day';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    button('Save routine').click();
+
+    const req = http.expectOne({ method: 'POST', url: '/api/routines' });
+    expect(req.request.body.name).toBe('Push Day');
+    expect(req.request.body.exercises).toEqual([
+      expect.objectContaining({ exerciseId: 1, sets: 2, reps: 4, restSeconds: 90 }),
+    ]);
+    req.flush({ id: 3, name: 'Push Day', exercises: [], totalSets: 2, estimatedMinutes: 5 });
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Saved as routine "Push Day"');
+  });
+
   it('lists trained exercises by recency', async () => {
     const { fixture, el, button } = await setup();
     button('Exercises').click();
