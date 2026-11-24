@@ -5,6 +5,13 @@ version may need you to do something when upgrading; minor and patch versions ne
 
 ## [Unreleased]
 
+### Added
+
+- **Create an exercise from the picker.** Search for a name that isn't there and tap Create. Pick a muscle
+  group and equipment, and it is saved and added straight to the workout or routine you are building.
+- **Save as routine.** The finish sheet of a workout started without a routine can now save what you did
+  as a routine.
+
 ## [1.1.0] - 2026-11-22
 
 More of what you do at the gym works without a signal, progression gets smarter, and you can bring

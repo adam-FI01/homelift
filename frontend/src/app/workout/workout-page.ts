@@ -14,6 +14,7 @@ import { Observable, of, switchMap } from 'rxjs';
 import { Exercise } from '../exercises/exercise';
 import { problemMessage } from '../exercises/exercise.service';
 import { describeSets } from '../history/history';
+import { RoutineService } from '../routines/routine.service';
 import { SettingsService } from '../settings/settings.service';
 import { WeightPipe } from '../settings/weight.pipe';
 import { ConfirmService } from '../shared/confirm.service';
@@ -64,6 +65,7 @@ export class WorkoutPage {
   protected readonly unit = this.settings.unitLabel;
 
   private readonly queue = inject(OfflineQueue);
+  private readonly routines = inject(RoutineService);
   /** The workout as the server last sent it. */
   private readonly server = signal<Workout | null | undefined>(undefined);
   /** What the page shows: the server's workout plus any sets waiting to sync. */
@@ -84,6 +86,9 @@ export class WorkoutPage {
   /** Log the next set as a warm-up; switches off when you change exercise. */
   protected readonly warmupNext = linkedSignal({ source: this.index, computation: () => false });
   protected readonly notesDraft = signal('');
+  /** "Save as routine" on the finish sheet: null when closed, else the name being typed. */
+  protected readonly routineName = signal<string | null>(null);
+  protected readonly routineSaved = signal<string | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -345,6 +350,42 @@ export class WorkoutPage {
     }
     this.notesDraft.set(this.workout()?.notes ?? '');
     this.finishing.set(true);
+  }
+
+  protected startSaveRoutine(): void {
+    this.routineName.set(this.workout()?.name ?? '');
+  }
+
+  /** Turns what was done today into a routine: working sets and the last rep count per exercise. */
+  protected saveRoutine(): void {
+    const w = this.workout();
+    const name = this.routineName()?.trim();
+    if (!w || !name || this.busy()) return;
+    const exercises = w.exercises
+      .map((e) => ({ e, done: workingSets(e) }))
+      .filter(({ done }) => done.length > 0)
+      .map(({ e, done }) => ({
+        exerciseId: e.exerciseId,
+        sets: Math.min(done.length, 20),
+        reps: Math.min(Math.max(done[done.length - 1].reps, 1), 100),
+        maxReps: null,
+        restSeconds: e.restSeconds ?? this.settings.settings().defaultRestSeconds,
+        autoProgress: false,
+        supersetGroup: e.supersetGroup,
+      }));
+    this.busy.set(true);
+    this.error.set(null);
+    this.routines.save(undefined, { name, exercises }).subscribe({
+      next: (r) => {
+        this.busy.set(false);
+        this.routineName.set(null);
+        this.routineSaved.set(r.name);
+      },
+      error: (err: unknown) => {
+        this.busy.set(false);
+        this.error.set(problemMessage(err));
+      },
+    });
   }
 
   protected confirmFinish(): void {
