@@ -5,13 +5,6 @@ version may need you to do something when upgrading; minor and patch versions ne
 
 ## [Unreleased]
 
-### Added
-
-- **Create an exercise from the picker.** Search for a name that isn't there and tap Create. Pick a muscle
-  group and equipment, and it is saved and added straight to the workout or routine you are building.
-- **Save as routine.** The finish sheet of a workout started without a routine can now save what you did
-  as a routine.
-
 ## [1.1.0] - 2026-11-22
 
 More of what you do at the gym works without a signal, progression gets smarter, and you can bring
@@ -35,6 +28,10 @@ your old history in.
   picker, load lazily, and are stored in `media/` next to the database.
 - **Full backup with pictures.** Settings has a new Full backup (`homelift.zip`) holding the database and
   the pictures. The database-only download is still there.
+- **Create an exercise from the picker.** Search for a name that isn't there and tap Create. Pick a muscle
+  group and equipment, and it is saved and added straight to the workout or routine you are building.
+- **Save as routine.** The finish sheet of a workout started without a routine can now save what you did
+  as a routine.
 - **Import workouts from CSV.** Settings › Import workouts reads a CSV with a date, exercise, weight and
   reps per row, and exports from Strong, Hevy and FitNotes. A dry run shows what is in the file, which
   workouts already exist (they are skipped), and lets you match each exercise name to your library, add
