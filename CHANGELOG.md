@@ -5,6 +5,10 @@ version may need you to do something when upgrading; minor and patch versions ne
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-24
+
+Sheets and dialogs are easier to read and use, and the app now tells you when something saved.
+
 ### Changed
 
 - **Clearer sheets and dialogs.** Bigger, darker text, a stronger backdrop, and a clear button order: one
@@ -109,6 +113,7 @@ The first release: everything you need to log training on your own server.
 - From the 0.1 preview: back up `homelift.db`, then pull and restart. Database migrations V2 to V7 run on
   start-up and only add tables and columns.
 
-[Unreleased]: https://github.com/adam-FI01/homelift/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/adam-FI01/homelift/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/adam-FI01/homelift/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/adam-FI01/homelift/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/adam-FI01/homelift/releases/tag/v1.0.0
