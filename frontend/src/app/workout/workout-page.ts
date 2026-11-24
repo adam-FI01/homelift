@@ -364,20 +364,19 @@ export class WorkoutPage {
     if (!w || !name || this.busy()) return;
     this.busy.set(true);
     this.error.set(null);
-    this.routines.save(
-      undefined,
-      routineFromWorkout(w, name, this.settings.settings().defaultRestSeconds),
-    ).subscribe({
-      next: (r) => {
-        this.busy.set(false);
-        this.routineName.set(null);
-        this.routineSaved.set(r.name);
-      },
-      error: (err: unknown) => {
-        this.busy.set(false);
-        this.error.set(problemMessage(err));
-      },
-    });
+    this.routines
+      .save(undefined, routineFromWorkout(w, name, this.settings.settings().defaultRestSeconds))
+      .subscribe({
+        next: (r) => {
+          this.busy.set(false);
+          this.routineName.set(null);
+          this.routineSaved.set(r.name);
+        },
+        error: (err: unknown) => {
+          this.busy.set(false);
+          this.error.set(problemMessage(err));
+        },
+      });
   }
 
   protected confirmFinish(): void {
